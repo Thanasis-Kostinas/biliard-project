@@ -1,0 +1,49 @@
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.875rem; /* Smaller base font size */
+}
+
+.container {
+  padding: 8px;
+}
+
+.MuiTableCell-root {
+  font-size: 0.7rem; /* Smaller font size for table cells */
+  border: none;
+  background-color: wh;
+}
+
+.MuiButton-root {
+  min-width: 60px;
+  padding: 4px 8px;
+  font-size: 0.7rem; /* Smaller font size for buttons */
+}
+
+.MuiAppBar-root {
+  height: 48px;
+}
+
+.MuiTypography-h4 {
+  font-size: 1.25rem; /* Smaller font size for headings */
+}
+
+.MuiTypography-body1 {
+  font-size: 0.75rem; /* Smaller font size for body text */
+}
+
+.MuiTypography-body2 {
+  font-size: 0.65rem; /* Even smaller font size for secondary text */
+}
+
+@media (max-width: 600px) {
+  .MuiTypography-h4 {
+    font-size: 1rem; /* Smaller font size for mobile view */
+  }
+  .MuiButton-root {
+    font-size: 0.65rem; /* Further reduce font size for mobile */
+  }
+  .MuiTableCell-root {
+    font-size: 0.6rem; /* Further reduce table cell font size for mobile */
+  }
+}

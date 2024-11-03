@@ -1,0 +1,12 @@
+@media (min-width: 1500) {
+  .css-5c1adp-MuiContainer-root {
+      max-width: 1500;
+  }
+}
+
+@media (min-width: 100px) {
+  .css-5c1adp-MuiContainer-root {
+      padding-left: 24px;
+      padding-right: 24px;
+  }
+}

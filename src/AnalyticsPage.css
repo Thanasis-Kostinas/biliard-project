@@ -1,0 +1,19 @@
+/* Custom styles for the AnalyticsPage */
+.container {
+    margin: 0; /* Remove outer margin */
+    padding: 1rem; /* Adjust padding */
+}
+
+.button-back {
+    margin-bottom: 8px; /* Reduce margin for the back button */
+}
+
+.tabs {
+    margin-bottom: 16px; /* Adjust margin for the tabs */
+}
+
+.chart-container,
+.table-container {
+    margin: 0; /* Remove margin around charts and tables */
+    padding: 0; /* Remove padding around charts and tables */
+}
