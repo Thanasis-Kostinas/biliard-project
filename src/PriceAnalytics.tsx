@@ -1,16 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { Accordion, AccordionSummary, AccordionDetails, Grid, Card, Typography, Select, MenuItem, TextField, Table, TableBody, TableCell, TableHead, TableRow, CircularProgress, Box, InputLabel, FormControl } from '@mui/material';
+import {
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Grid,
+    Card,
+    Typography,
+    Select,
+    MenuItem,
+    TextField,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+    CircularProgress,
+    Box,
+    InputLabel,
+    FormControl,
+    Snackbar,
+    Button
+} from '@mui/material';
 import { invoke } from '@tauri-apps/api/tauri';
-import { SelectChangeEvent } from "@mui/material"; // Import the SelectChangeEvent type
-
-import { Line } from 'react-chartjs-2';
+import { SelectChangeEvent } from "@mui/material"; 
+import { Bar } from 'react-chartjs-2'; // Import Bar instead of Line
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
-    Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend
 } from 'chart.js';
-import './PriceAnalytics.css'
+import './PriceAnalytics.css';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface GameData {
     id: number;
@@ -33,6 +59,8 @@ const PriceAnalytics = () => {
     const [categories, setCategories] = useState<string[]>([]);
     const [instances, setInstances] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
     useEffect(() => {
         const fetchCategoriesAndInstances = async () => {
@@ -98,7 +126,7 @@ const PriceAnalytics = () => {
         setInstance(event.target.value as string);
     };
 
-    const handleIntervalChange =  (event: SelectChangeEvent<string>) => {
+    const handleIntervalChange = (event: SelectChangeEvent<string>) => {
         setInterval(event.target.value as string);
     };
 
@@ -110,25 +138,47 @@ const PriceAnalytics = () => {
         setEndDate(event.target.value);
     };
 
+    const handleDeleteGame = async (id: number) => {
+        try {
+            await invoke('delete_game_by_id', { id });
+            setSnackbarMessage('Game deleted successfully');
+            setSnackbarOpen(true);
+            setFilteredData((prevData) => prevData.filter((game) => game.id !== id));
+        } catch (error) {
+            console.error('Error deleting game:', error);
+            setSnackbarMessage('Failed to delete game');
+            setSnackbarOpen(true);
+        }
+    };
+
     const totalEarnings = filteredData.reduce((acc, item) => acc + item.total_cost, 0);
 
     const chartData = {
         labels: filteredData.map(item => {
-            return interval === 'Daily' 
-                ? formatTime(item.start_time) 
-                : interval === 'Weekly' 
-                ? formatWeekday(item.start_time) 
+            return interval === 'Daily'
+                ? formatTime(item.start_time)
+                : interval === 'Weekly'
+                ? formatWeekday(item.start_time)
                 : formatDate(item.start_time);
         }),
         datasets: [
             {
                 label: 'Total Earnings',
                 data: filteredData.map(item => item.total_cost),
+                backgroundColor: 'rgba(75,192,192,0.5)',
                 borderColor: 'rgba(75,192,192,1)',
-                backgroundColor: 'rgba(75,192,192,0.2)',
-                fill: true,
+                borderWidth: 1,
             },
         ],
+    };
+
+    const chartOptions = {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+            },
+        },
     };
 
     if (loading) {
@@ -190,6 +240,8 @@ const PriceAnalytics = () => {
                                 value={startDate}
                                 onChange={handleStartDateChange}
                                 InputLabelProps={{ shrink: true }}
+                                variant="outlined"
+                                style={{ width: '48%' }}
                             />
                             <TextField
                                 type="date"
@@ -197,6 +249,8 @@ const PriceAnalytics = () => {
                                 value={endDate}
                                 onChange={handleEndDateChange}
                                 InputLabelProps={{ shrink: true }}
+                                variant="outlined"
+                                style={{ width: '48%' }}
                             />
                         </Box>
                     )}
@@ -205,99 +259,64 @@ const PriceAnalytics = () => {
                         Total Earnings: €{totalEarnings.toFixed(2)}
                     </Typography>
 
-                    <div style={{ padding: '1rem' }}>
-                        <Line data={chartData} />
-                    </div>
+                    <Bar data={chartData} options={chartOptions} /> {/* Use Bar chart here */}
 
-                    <Accordion>
-                        <AccordionSummary
-                            expandIcon={<ExpandMoreIcon />}
-                            aria-controls="panel1a-content"
-                            id="panel1a-header"
-                        >
-                            <Typography>Game Data Table</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-  <Box style={{ maxHeight: '400px', overflowY: 'auto' }}>
-    <Table>
-      <TableHead>
-        <TableRow>
-          <TableCell>Όνομα</TableCell>
-          <TableCell>Κατηγορία</TableCell>
-          <TableCell>Τιμή ανα ώρα</TableCell>
-          <TableCell>Elapsed Time</TableCell>
-          <TableCell>Total Cost</TableCell>
-          <TableCell>Start Time</TableCell>
-          <TableCell>End Time</TableCell>
-          <TableCell>Actions</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {filteredData.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell>{item.instance_name}</TableCell>
-            <TableCell>{item.category_name}</TableCell>
-            <TableCell>{item.price_per_hour}</TableCell>
-            <TableCell>{item.elapsed_time} λεπτά</TableCell>
-            <TableCell>€{item.total_cost.toFixed(2)}</TableCell>
-            <TableCell>{formatStartTime(item.start_time)}</TableCell>
-            <TableCell>{item.end_time ? formatStartTime(item.end_time) : 'Ongoing'}</TableCell>
-            <TableCell>
-              <button
-                onClick={async () => {
-                  try {
-                    await invoke('delete_game_by_id', { id: item.id });
-                    alert('Game deleted successfully');
-                    setFilteredData((prevData) =>
-                      prevData.filter((game) => game.id !== item.id)
-                    );
-                  } catch (error) {
-                    console.error('Error deleting game:', error);
-                    alert('Failed to delete game');
-                  }
-                }}
-              >
-                Delete
-              </button>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  </Box>
-</AccordionDetails>
-                    </Accordion>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>ID</TableCell>
+                                <TableCell>Category</TableCell>
+                                <TableCell>Instance</TableCell>
+                                <TableCell>Price Per Hour</TableCell>
+                                <TableCell>Elapsed Time</TableCell>
+                                <TableCell>Total Cost</TableCell>
+                                <TableCell>Actions</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {filteredData.map((game) => (
+                                <TableRow key={game.id}>
+                                    <TableCell>{game.id}</TableCell>
+                                    <TableCell>{game.category_name}</TableCell>
+                                    <TableCell>{game.instance_name}</TableCell>
+                                    <TableCell>€{game.price_per_hour.toFixed(2)}</TableCell>
+                                    <TableCell>{game.elapsed_time ? `${game.elapsed_time} hours` : 'N/A'}</TableCell>
+                                    <TableCell>€{game.total_cost.toFixed(2)}</TableCell>
+                                    <TableCell>
+                                        <Button variant="contained" color="secondary" onClick={() => handleDeleteGame(game.id)}>
+                                            Delete
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+
+                    <Snackbar
+                        open={snackbarOpen}
+                        autoHideDuration={6000}
+                        onClose={() => setSnackbarOpen(false)}
+                        message={snackbarMessage}
+                    />
                 </Card>
             </Grid>
         </Grid>
     );
+};
 
-    function formatStartTime(dateString: string): string {
-        const date = new Date(dateString);
-        return date.toLocaleString([], {
-            year: 'numeric',
-            month: 'short',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false, // 24-hour format
-        });
-    }
+const formatTime = (timeString: string) => {
+    const date = new Date(timeString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Formats the time as HH:MM
+};
 
-    function formatDate(dateString: string): string {
-        const date = new Date(dateString);
-        return date.toLocaleDateString(); // e.g., "10/08/2024"
-    }
+const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(); // Format it as needed
+};
 
-    function formatTime(dateString: string): string {
-        const date = new Date(dateString);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // e.g., "14:30"
-    }
-
-    function formatWeekday(dateString: string): string {
-        const date = new Date(dateString);
-        return date.toLocaleDateString([], { weekday: 'long' }); // e.g., "Monday"
-    }
+const formatWeekday = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', { weekday: 'long' }); // Get the weekday name
 };
 
 export default PriceAnalytics;

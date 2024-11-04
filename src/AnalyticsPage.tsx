@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import {
-    Container, Tabs, Tab, Button, Typography
-} from '@mui/material';
+import React, { useState } from 'react';
+import { Container, Tabs, Tab, Button, Typography } from '@mui/material';
 import PriceAnalytics from './PriceAnalytics';
 import TrafficAnalytics from './TrafficAnalytics';
 import './AnalyticsPage.css'; // Adjust the path if your CSS file is in a different folder
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Import the icon
+
 
 // Main Analytics Page Component
 const AnalyticsPage = () => {
@@ -16,26 +16,38 @@ const AnalyticsPage = () => {
 
     // Function to handle the back button click
     const handleBackButtonClick = () => {
-        // Logic for going back, e.g., using history from React Router
         window.history.back();
     };
 
     return (
-        <Container>
+        <Container maxWidth="lg" className="analytics-container">
+           
+            <Typography variant="h4" align="center" className="analytics-title">
+                Analytics Overview
+            </Typography>
             <Button
-                variant="contained"
-                color="primary"
-                onClick={handleBackButtonClick}
-                style={{ marginBottom: '16px' }}
+    variant="contained"
+    color="primary"
+    style={{ margin: '20px' }}
+    onClick={handleBackButtonClick}
+    className="back-button"
+    startIcon={<ArrowBackIcon />} // Add the icon here
+>
+    Back
+</Button>
+            <Tabs
+                value={tabValue}
+                onChange={handleTabChange}
+                centered
+                className="analytics-tabs"
             >
-                Back
-            </Button>
-            <Tabs value={tabValue} onChange={handleTabChange} centered>
                 <Tab label="Price" />
                 <Tab label="Traffic" />
             </Tabs>
-            {tabValue === 0 && <PriceAnalytics />}
-            {tabValue === 1 && <TrafficAnalytics />}
+            <div className="analytics-content">
+                {tabValue === 0 && <PriceAnalytics />}
+                {tabValue === 1 && <TrafficAnalytics />}
+            </div>
         </Container>
     );
 };

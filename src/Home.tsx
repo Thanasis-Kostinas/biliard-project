@@ -25,16 +25,23 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import CategoryIcon from "@mui/icons-material/Category";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import SettingsIcon from "@mui/icons-material/Settings";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useGameContext, GameInstance } from "./GameContext";
 import { invoke } from "@tauri-apps/api/tauri";
 import './Home.css'; // Adjust the path if your CSS file is in a different folder
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { BorderAll } from "@mui/icons-material";
-
 
 const Home = () => {
   const {
@@ -51,47 +58,54 @@ const Home = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [message, setMessage] = useState("");
-  const [openFinishDialog, setOpenFinishDialog] = useState(false); // State for finish confirmation dialog
-  const [selectedInstanceId, setSelectedInstanceId] = useState<number | null>(null); // Store the selected instance ID for finishing
+  const [openFinishDialog, setOpenFinishDialog] = useState(false);
+  const [selectedInstanceId, setSelectedInstanceId] = useState<number | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [password, setPassword] = useState("");
   const [redirectToAnalytics, setRedirectToAnalytics] = useState(false);
   const [redirectToProperties, setRedirectToProperties] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Prevents UI from right clicked so user cant press right  click back and go back to analytics
+//   useEffect(() => {
+//     const handleContextmenu = (e: MouseEvent) => {
+//         e.preventDefault();
+//     };
+//     document.addEventListener('contextmenu', handleContextmenu);
+//     return function cleanup() {
+//         document.removeEventListener('contextmenu', handleContextmenu);
+//     };
+// }, []);
 
   const getTimerFromLocalStorage = (instanceId: string): string | null => {
-    return localStorage.getItem(instanceId); // returns the timestamp string or null
+    return localStorage.getItem(instanceId);
   };
-  // Utility function to calculate total cost
+
   const calculateTotalCost = (elapsedTime: number, pricePerHour: number): number => {
-    return (elapsedTime / 3600000) * pricePerHour; // Convert milliseconds to hours and multiply by price per hour
+    return (elapsedTime / 3600000) * pricePerHour;
   };
-  // Fetch games on mount
+
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        // Fetch game instances
         const fetchedInstances = (await invoke("get_game_instances")) as GameInstance[] || [];
-
-        // Map over fetched instances to set end_time, total_cost, elapsed_time, and update with local storage timers
         const initializedInstances = fetchedInstances.map((instance) => {
-          const storedStartTime = getTimerFromLocalStorage(instance.id.toString()); // Get the timer for this instance by ID
-
+          const storedStartTime = getTimerFromLocalStorage(instance.id.toString());
           if (storedStartTime) {
-            const startTimeDate = new Date(storedStartTime).getTime(); // Convert to timestamp
+            const startTimeDate = new Date(storedStartTime).getTime();
             const startTime = storedStartTime;
-            const now = Date.now(); // Current time
-            const elapsedTime = now - startTimeDate; // Calculate elapsed time in milliseconds
+            const now = Date.now();
+            const elapsedTime = now - startTimeDate;
 
             return {
               ...instance,
-              end_time: null, // Set as needed
+              end_time: null,
               start_time: startTime,
-              total_cost: calculateTotalCost(elapsedTime, instance.price_per_hour), // Recalculate total cost based on elapsed time
-              elapsed_time: elapsedTime, // Set elapsed time
+              total_cost: calculateTotalCost(elapsedTime, instance.price_per_hour),
+              elapsed_time: elapsedTime,
             };
           }
 
-          // Return instance with default values if no stored start time
           return {
             ...instance,
             end_time: null,
@@ -100,8 +114,6 @@ const Home = () => {
             elapsed_time: 0,
           };
         });
-
-        // Set fetched game instances
         setGameInstances(initializedInstances);
       } catch (error) {
         console.error("Failed to fetch game instances:", error);
@@ -117,8 +129,18 @@ const Home = () => {
     setOpenSnackbar(true);
   };
 
-  // Menu handling
-  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleDrawerToggle = () => {
+    setDrawerOpen(!drawerOpen);
+  };
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setDrawerOpen(false);
+    handleCreateCategoryClick()
+  };
+
+   // Menu handling
+   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -128,7 +150,6 @@ const Home = () => {
 
   // Dialog handling
   const handleCreateCategoryClick = () => {
-    setAnchorEl(null);
     setOpenDialog(true);
     setRedirectToAnalytics(false);
     setRedirectToProperties(false);
@@ -173,19 +194,16 @@ const Home = () => {
     return `${hours}:${minutes}:${seconds}`;
   };
 
-  // Handle Finish dialog open
   const handleFinishDialogOpen = (instanceId: number) => {
     setSelectedInstanceId(instanceId);
     setOpenFinishDialog(true);
   };
 
-  // Handle Finish dialog close
   const handleFinishDialogClose = () => {
     setOpenFinishDialog(false);
     setSelectedInstanceId(null);
   };
 
-  // Confirm finish game instance
   const handleFinishConfirm = async () => {
     if (selectedInstanceId === null) return;
 
@@ -196,12 +214,11 @@ const Home = () => {
       return;
     }
 
-    // Validate required fields before saving
     if (
       !instance.category_name ||
       !instance.instance_name ||
       instance.price_per_hour <= 0 ||
-      (instance.elapsed_time !== null && instance.elapsed_time < 0) || // Check for null first
+      (instance.elapsed_time !== null && instance.elapsed_time < 0) ||
       instance.total_cost < 0 ||
       !instance.start_time
     ) {
@@ -211,54 +228,86 @@ const Home = () => {
     }
 
     try {
-      await finishGame(selectedInstanceId); // Call the finishGame function
-      resetGame(selectedInstanceId); // Reset the game after finishing
+      await finishGame(selectedInstanceId);
+      // resetGame(selectedInstanceId);
       showSnackbar("Game saved successfully!");
     } catch (error) {
       console.error("Error saving game:", error);
       showSnackbar("Error: Failed to save game.");
     }
 
-    handleFinishDialogClose(); // Close the dialog after finishing
+    handleFinishDialogClose();
   };
 
-  // Snackbar handling
   const handleSnackbarClose = () => {
     setOpenSnackbar(false);
   };
 
+
   return (
-    <div>
-      <AppBar position="static" >
-        <Toolbar>
-          <IconButton edge="start" color="inherit" aria-label="menu" onClick={handleMenuClick}>
-            <MenuIcon titleAccess="Menu" />
-          </IconButton>
+    <div style={{ display: "flex" }}>
+      {/* Sidebar drawer */}
+      <Drawer
+        variant="persistent"
+        anchor="left"
+        open={drawerOpen}
+        onClose={handleDrawerToggle}
+      >
+        <div style={{ width: 250 }}>
+          <Toolbar>
+          <IconButton onClick={handleDrawerToggle} sx={{ margin: '5px' }}>
+  <MenuIcon />
+</IconButton>
+            <Typography variant="h6">Μενού</Typography>
+          </Toolbar>
+          <Divider />
+          <List>
+      <ListItem 
+        component="div" 
+        onClick={() => handleCreateCategoryClick()} 
+        sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+      >
+        <ListItemIcon><CategoryIcon /></ListItemIcon>
+        <ListItemText primary="Create Category" />
+      </ListItem>
+      <ListItem 
+        component="div" 
+        onClick={() => handleAnalyticsClick()} 
+        sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+      >
+        <ListItemIcon><BarChartIcon /></ListItemIcon>
+        <ListItemText primary="Analytics" />
+      </ListItem>
+      <ListItem 
+        component="div" 
+        onClick={() => handlePropertiesClick()} 
+        sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+      >
+        <ListItemIcon><SettingsIcon /></ListItemIcon>
+        <ListItemText primary="Settings" />
+      </ListItem>
+    </List>
+        </div>
+      </Drawer>
 
-          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-            <MenuItem onClick={handleCreateCategoryClick}>Create New Category</MenuItem>
-            <MenuItem onClick={handleAnalyticsClick}>Analytics</MenuItem>
-            <MenuItem onClick={handlePropertiesClick}>Settings</MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
+      {/* Main content */}
+      <main style={{ flexGrow: 1, padding: "5px" }}>
+      <IconButton sx={{ margin: '5px' }} edge="start" color="inherit" aria-label="menu" onClick={handleDrawerToggle}>
+              <MenuIcon />
+            </IconButton>
 
-      <Container>
-
-
-        {gameInstances.length > 0 ? (
-          <TableContainer component={Paper} style={{ marginTop: '10px'}}>
-            <div style={{  backgroundColor: 'white' }}>
-
-              <Table  size="small">
-              <TableHead >
-              <TableRow style={{ }}>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Κατηγορία</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Ονομα</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Ξεκηνσε</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Τελειωσε</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Συνολυκο κοστος (€)</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Ενεργειες</TableCell>
+        <Container>
+          {gameInstances.length > 0 ? (
+            <TableContainer component={Paper} style={{ marginTop: "10px" }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Category</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Name</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Start Time</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Elapsed Time</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Total Cost (€)</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -277,107 +326,78 @@ const Home = () => {
                         <Grid container spacing={0.5}>
                           <Grid item>
                             <Tooltip title="Start">
-                              <IconButton color="success" onClick={() => startGame(instance.id)}>
-                                <PlayArrowIcon />
-                              </IconButton>
+                              <Button
+                                color="primary"
+                                onClick={() => startGame(instance.id)}
+                                startIcon={<PlayArrowIcon />}
+                                disabled={Boolean(instance.start_time)}
+                              />
                             </Tooltip>
                           </Grid>
                           <Grid item>
                             <Tooltip title="Reset">
-                              <IconButton color="primary" onClick={() => resetGame(instance.id)}>
-                                <RestartAltIcon />
-                              </IconButton>
+                              <Button
+                                color="warning"
+                                onClick={() => resetGame(instance.id)}
+                                startIcon={<RestartAltIcon />}
+                                disabled={!instance.start_time}
+                              />
                             </Tooltip>
                           </Grid>
                           <Grid item>
                             <Tooltip title="Finish">
-                              <IconButton
-                                color="primary"
-                                disabled={instance.total_cost <= 0} // Disable if totalCost <= 0
+                              <Button
+                                color="success"
                                 onClick={() => handleFinishDialogOpen(instance.id)}
-                              >
-                                <CheckCircleIcon />
-                              </IconButton>
+                                startIcon={<CheckCircleIcon />}
+                                disabled={!instance.start_time}
+                              />
                             </Tooltip>
                           </Grid>
-                          {/* <Grid item>
-                      <Button
-                          variant="outlined"
-                          color="secondary"
-                          size="small"
-                          onClick={() => navigate(`/edit/${instance.id}`)} // Navigate to Edit page
-                        >
-                          Edit
-                        </Button>
-                        </Grid>
-                      <Grid item>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          size="small"
-                          onClick={() => deleteGame(instance.category_name, instance.instance_name)}Table 
-                        >
-                          Delete
-                        </Button>
-                      </Grid> */}
                         </Grid>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </div>
-          </TableContainer>
-        ) : (
-          <Typography variant="h6" style={{ marginTop: "20px" }}>
-            No game instances available.
+            </TableContainer>
+          ) : (
+            <Typography variant="body1" color="textSecondary" style={{ marginTop: "20px" }}>
+              No game instances found.
+            </Typography>
+          )}
+        </Container>
+      </main>
+
+      {/* Finish dialog */}
+      <Dialog open={openFinishDialog} onClose={handleFinishDialogClose}>
+        <DialogTitle>Finish Game</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to finish this game? All progress will be saved.
           </Typography>
-        )}
-      </Container>
-      <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleSnackbarClose}>
-        <Alert onClose={handleSnackbarClose} severity="info" icon={<CheckCircleIcon />}>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleFinishDialogClose} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleFinishConfirm} color="success" autoFocus>
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: "100%" }}>
           {message}
         </Alert>
       </Snackbar>
 
-      {/* Finish Confirmation Dialog */}
-      <Dialog open={openFinishDialog} onClose={handleFinishDialogClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Typography variant="h6" style={{ display: 'flex', alignItems: 'center' }}>
-            <CheckCircleIcon color="success" style={{ marginRight: 8 }} />
-            Confirm Finish Game
-          </Typography>
-        </DialogTitle>
-        <DialogContent>
-          {selectedInstanceId !== null && (
-            <div style={{ padding: '20px' }}>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Game Name:</strong> {gameInstances.find((inst) => inst.id === selectedInstanceId)?.instance_name}
-              </Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Category:</strong> {gameInstances.find((inst) => inst.id === selectedInstanceId)?.category_name}
-              </Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Time Played:</strong> {formatTime(gameInstances.find((inst) => inst.id === selectedInstanceId)?.elapsed_time || 0)}
-              </Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Total Cost (€):</strong> {gameInstances.find((inst) => inst.id === selectedInstanceId)?.total_cost.toFixed(2)}
-              </Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                <strong>Started At:</strong> {new Date(gameInstances.find((inst) => inst.id === selectedInstanceId)?.start_time || "").toLocaleString()}
-              </Typography>
-            </div>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleFinishDialogClose} color="secondary">
-            Cancel
-          </Button>
-          <Button onClick={handleFinishConfirm} color="primary" variant="contained">
-            Yes, Finish Game
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Password Dialog */}
       <Dialog open={openDialog} onClose={handleDialogClose}>

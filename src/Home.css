@@ -36,6 +36,11 @@ body {
   font-size: 0.65rem; /* Even smaller font size for secondary text */
 }
 
+.MuiButtonBase {
+  background-color: beige;
+color: aqua;
+}
+
 @media (max-width: 600px) {
   .MuiTypography-h4 {
     font-size: 1rem; /* Smaller font size for mobile view */

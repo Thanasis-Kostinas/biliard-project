@@ -69,7 +69,7 @@ const CreateCategory = () => {
     <Container maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, mt: 5 }}>
         <Typography variant="h4" gutterBottom>
-          Create New Game
+          Διμηουργησε νεα κατηγορια
         </Typography>
 
         <form onSubmit={handleSubmit}>

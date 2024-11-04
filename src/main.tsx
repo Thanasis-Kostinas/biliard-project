@@ -14,8 +14,8 @@ const lightTheme = createTheme({
       main: "#dc004e", // Customize your secondary color here
     },
     background: {
-      default: "#ffffff", // Set the background color to white
-      paper: "#f4f6f8", // Set the paper color for components like Paper
+      default: "#f4f6f8", // Set the background color to white
+      paper: "#ffffff", // Set the paper color for components like Paper
     },
     text: {
       primary: "#000000", // Set primary text color

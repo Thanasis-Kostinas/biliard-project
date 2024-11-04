@@ -1,67 +1,31 @@
+/* Updated CSS */
 body {
-  margin: 0;
   font-family: 'Roboto', sans-serif;
-  font-size: 0.875rem; /* Smaller base font size */
+  font-size: 0.875rem;
 }
 
-.container {
-  padding: 8px;
+.MuiTableContainer-root {
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .MuiTableCell-root {
-  font-size: 0.7rem; /* Smaller font size for table cells */
-  border: none;
-  background-color: white;
+  font-size: 0.8rem;
+  padding: 8px;
 }
 
 .MuiButton-root {
-  min-width: 60px;
-  padding: 4px 8px;
-  font-size: 0.7rem; /* Smaller font size for buttons */
-}
-
-.appBar {
-  background-color: #1976d2; /* Customize your AppBar color */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
-  padding: 0 16px; /* Add padding */
-}
-
-.iconButton {
-  margin-right: 16px; /* Space between icon and menu */
-}
-
-.menu .MuiMenuItem-root:hover {
-  background-color: #e3f2fd; /* Change background on hover */
-}
-
-.menuItem {
-  font-weight: 500; /* Bold font for menu items */
-}
-
-.MuiAppBar-root {
-  height: 48px;
-}
-
-.MuiTypography-h4 {
-  font-size: 1.25rem; /* Smaller font size for headings */
-}
-
-.MuiTypography-body1 {
-  font-size: 0.75rem; /* Smaller font size for body text */
-}
-
-.MuiTypography-body2 {
-  font-size: 0.65rem; /* Even smaller font size for secondary text */
+  text-transform: none;
+  padding: 6px 12px;
 }
 
 @media (max-width: 600px) {
-  .MuiTypography-h4 {
-    font-size: 1rem; /* Smaller font size for mobile view */
+  .MuiTableCell-root {
+    font-size: 0.7rem;
+    padding: 4px;
   }
   .MuiButton-root {
-    font-size: 0.65rem; /* Further reduce font size for mobile */
-  }
-  .MuiTableCell-root {
-    font-size: 0.6rem; /* Further reduce table cell font size for mobile */
+    padding: 4px 8px;
+    font-size: 0.75rem;
   }
 }

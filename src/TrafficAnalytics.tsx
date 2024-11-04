@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Card, Typography, Select, MenuItem, TextField } from '@mui/material';
+import { Grid, Card, Typography, Select, MenuItem, TextField, CircularProgress } from '@mui/material';
 import Chart from 'react-apexcharts';
 import { invoke } from '@tauri-apps/api/tauri';
 import { ApexOptions } from 'apexcharts';
@@ -19,15 +19,18 @@ const TrafficAnalytics = () => {
     const [selectedDate, setSelectedDate] = useState<string>('');
     const [weeklyData, setWeeklyData] = useState<GameData[]>([]);
     const [chartSeries, setChartSeries] = useState<any[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
 
     useEffect(() => {
         fetchCategories();
     }, []);
 
     useEffect(() => {
-        dateOption === 'daily'
-            ? fetchTrafficData(new Date().toISOString().split('T')[0])
-            : selectedDate && fetchTrafficData(selectedDate);
+        if (dateOption === 'daily') {
+            fetchTrafficData(new Date().toISOString().split('T')[0]);
+        } else if (selectedDate) {
+            fetchTrafficData(selectedDate);
+        }
     }, [dateOption, selectedDate]);
 
     useEffect(() => {
@@ -43,6 +46,7 @@ const TrafficAnalytics = () => {
     }, [categories, weeklyData]);
 
     const fetchCategories = async () => {
+        setLoading(true);
         try {
             const fetchedCategories = await invoke<string[]>('get_distinct_categories');
             setCategories(fetchedCategories);
@@ -55,6 +59,8 @@ const TrafficAnalytics = () => {
             setCategoryColors(colors);
         } catch (error) {
             console.error('Error fetching categories:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -64,24 +70,19 @@ const TrafficAnalytics = () => {
             hash = str.charCodeAt(i) + ((hash << 5) - hash);
         }
 
-        // Generate RGB values from the hash
-        const r = (hash & 0xFF) % 256; // Red component
-        const g = ((hash >> 8) & 0xFF) % 256; // Green component
-        const b = ((hash >> 16) & 0xFF) % 256; // Blue component
-
-        // Ensure brighter colors by increasing brightness
-        const brightnessFactor = 1.2; // Increase brightness by 20%
+        const r = (hash & 0xFF) % 256;
+        const g = ((hash >> 8) & 0xFF) % 256;
+        const b = ((hash >> 16) & 0xFF) % 256;
+        const brightnessFactor = 1.2;
         const newR = Math.min(255, Math.floor(r * brightnessFactor));
         const newG = Math.min(255, Math.floor(g * brightnessFactor));
         const newB = Math.min(255, Math.floor(b * brightnessFactor));
 
-        // Convert to hex format
-        const color = `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
-
-        return color;
+        return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
     };
 
     const fetchTrafficData = async (date: string) => {
+        setLoading(true);
         try {
             const fetchedData = await invoke<GameData[]>('fetch_custom_data', {
                 startDate: date,
@@ -90,26 +91,20 @@ const TrafficAnalytics = () => {
             setTrafficData(fetchedData || []);
         } catch (error) {
             console.error('Error fetching traffic data:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
     const fetchWeeklyData = async () => {
+        setLoading(true);
         try {
             const fetchedData = await invoke<GameData[]>('fetch_weekly_data');
-            // Check for null values in the data and print them
-            if (fetchedData) {
-                fetchedData.forEach((game, index) => {
-                    for (const key in game) {
-                        // Type assertion to ensure key is a valid key of GameData
-                        if (game[key as keyof GameData] === null) {
-                            console.log(`Null value found in game at index ${index}:`, game);
-                        }
-                    }
-                });
-            }
             setWeeklyData(fetchedData || []);
         } catch (error) {
             console.error('Error fetching weekly traffic data:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -122,48 +117,40 @@ const TrafficAnalytics = () => {
         data.forEach((game) => {
             const day = new Date(game.start_time).getDay();
             const categoryIndex = categories.indexOf(game.category_name);
-            const adjustedDay = day === 0 ? 6 : day - 1; // Adjust Sunday to index 6
+            const adjustedDay = day === 0 ? 6 : day - 1;
 
             if (categoryIndex !== -1) {
                 series[categoryIndex].data[adjustedDay] += 1;
             }
         });
 
-        setChartSeries(series.filter(serie => serie.data.some(value => value > 0))); // Filter out empty series
+        setChartSeries(series.filter(serie => serie.data.some(value => value > 0)));
     };
 
     const chartData = Object.values(trafficData.reduce((acc, game) => {
         const { category_name: category, instance_name: instance, start_time, end_time } = game;
-
-        // Validate and convert start_time and end_time
         const startTime = new Date(start_time).getTime();
         const endTime = end_time ? new Date(end_time).getTime() : Date.now();
 
-        // Check if the category exists in the accumulator
         if (!acc[category]) {
             acc[category] = { name: category, data: [] };
         }
 
-        // Ensure startTime and endTime are valid
         if (!isNaN(startTime) && !isNaN(endTime)) {
             acc[category].data.push({
                 x: instance,
-                y: [startTime, endTime], // Ensure y is always an array
-                color: categoryColors[category] || '#CCCCCC', // Default color if category not found
+                y: [startTime, endTime],
+                color: categoryColors[category] || '#CCCCCC',
             });
-        } else {
-            console.warn(`Invalid time for instance: ${instance}`, { startTime, endTime });
         }
         return acc;
-    }, {} as Record<string, { name: string; data: { x: string; y: number[]; color: string }[] }>))
+    }, {} as Record<string, { name: string; data: { x: string; y: number[]; color: string }[] }>));
 
     const rangeBarChartOptions: ApexOptions = {
         chart: {
             type: 'rangeBar',
             height: 350,
-             zoom: {
-            enabled: false, // Disable zoom
-        },
+            zoom: { enabled: false },
         },
         plotOptions: {
             bar: {
@@ -178,34 +165,20 @@ const TrafficAnalytics = () => {
         },
         tooltip: {
             custom: function({ series, seriesIndex, dataPointIndex, w }) {
-                // Get the relevant data for the tooltip
                 const data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
-        
-                // Check if data exists
-                if (!data) {
-                    return '<div>No data available</div>';
-                }
-        
-                // Extract the start and end times from the y values
-                const startTime = new Date(data.y[0]).toLocaleTimeString(); // Get only the time
-                const endTime = new Date(data.y[1]).toLocaleTimeString();   // Get only the time
-        
-                // Format the times
-                const startFormatted = startTime.toLocaleString();
-                const endFormatted = endTime.toLocaleString();
-        
-                // Build the tooltip HTML with only instance name, start time, and end time
-                return (
-                    '<ul>' +
-                    '<li><b>Game Instance</b>: ' + data.x + '</li>' +
-                    '<li><b>Start Time</b>: ' + startFormatted + '</li>' +
-                    '<li><b>End Time</b>: ' + endFormatted + '</li>' +
-                    '</ul>'
-                );
+                const startTime = new Date(data.y[0]).toLocaleTimeString();
+                const endTime = new Date(data.y[1]).toLocaleTimeString();
+                return `
+                    <div style="padding: 10px; border-radius: 5px; background-color: #ffffff;">
+                        <b>Game Instance:</b> ${data.x}<br>
+                        <b>Start Time:</b> ${startTime}<br>
+                        <b>End Time:</b> ${endTime}<br>
+                    </div>
+                `;
             }
         },
         xaxis: { type: 'datetime' },
-        title: { text: 'Traffic Analytics' },
+        title: { text: 'Traffic Analytics', align: 'center', style: { fontSize: '20px' } },
         yaxis: { title: { text: 'Game Instances' } },
     };
 
@@ -222,28 +195,57 @@ const TrafficAnalytics = () => {
     return (
         <Grid container spacing={2}>
             <Grid item xs={12}>
-                <Card>
-                    <Typography variant="h5">Traffic Analytics</Typography>
-                    <Select
-                        value={dateOption}
-                        onChange={(e) => setDateOption(e.target.value as 'daily' | 'custom')}
-                        sx={{ marginRight: 2 }}
-                    >
-                        <MenuItem value="daily">Daily</MenuItem>
-                        <MenuItem value="custom">Custom</MenuItem>
-                    </Select>
-                    {dateOption === 'custom' && (
-                        <TextField
-                            type="date"
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            sx={{ marginRight: 2 }}
+                <Card sx={{ padding: 3, boxShadow: 2 }}>
+                    <Typography variant="h5" sx={{ mb: 2 }}>Traffic Analytics</Typography>
+                    <Grid container spacing={2} alignItems="center">
+                        <Grid item>
+                            <Select
+                                value={dateOption}
+                                onChange={(e) => setDateOption(e.target.value as 'daily' | 'custom')}
+                                sx={{ marginRight: 2 }}
+                            >
+                                <MenuItem value="daily">Daily</MenuItem>
+                                <MenuItem value="custom">Custom</MenuItem>
+                            </Select>
+                        </Grid>
+                        {dateOption === 'custom' && (
+                            <Grid item>
+                                <TextField
+                                    label="Select Date"
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            </Grid>
+                        )}
+                    </Grid>
+                    {loading ? (
+                        <CircularProgress sx={{ marginTop: 2 }} />
+                    ) : (
+                        <Chart
+                            options={rangeBarChartOptions}
+                            series={chartData}
+                            type="rangeBar"
+                            height={350}
                         />
                     )}
-                    <Chart options={rangeBarChartOptions} series={chartData} type="rangeBar" height={350} />
-                    <Typography variant="h5">Weekly </Typography>
+                </Card>
+            </Grid>
 
-                    <Chart options={weeklyChartOptions} series={chartSeries} type="bar" height={350} />
+            <Grid item xs={12}>
+                <Card sx={{ padding: 3, boxShadow: 2 }}>
+                    <Typography variant="h5" sx={{ mb: 2 }}>Weekly Traffic Overview</Typography>
+                    {loading ? (
+                        <CircularProgress sx={{ marginTop: 2 }} />
+                    ) : (
+                        <Chart
+                            options={weeklyChartOptions}
+                            series={chartSeries}
+                            type="bar"
+                            height={200}
+                        />
+                    )}
                 </Card>
             </Grid>
         </Grid>
