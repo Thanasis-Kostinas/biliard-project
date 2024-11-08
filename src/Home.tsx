@@ -194,23 +194,25 @@ const Home = () => {
     return `${hours}:${minutes}:${seconds}`;
   };
 
-  const handleFinishDialogOpen = (instanceId: number) => {
-    setSelectedInstanceId(instanceId);
-    setOpenFinishDialog(true);
-  };
+  //Enable for dialog Pop Up on save
+  // const handleFinishDialogOpen = (instanceId: number) => {
+  //   setSelectedInstanceId(instanceId);
+  //   setOpenFinishDialog(true);
+  // };
+  //Enable for dialog Pop Up on save
 
-  const handleFinishDialogClose = () => {
-    setOpenFinishDialog(false);
-    setSelectedInstanceId(null);
-  };
+  // const handleFinishDialogClose = () => {
+  //   setOpenFinishDialog(false);
+  //   setSelectedInstanceId(null);
+  // };
 
-  const handleFinishConfirm = async () => {
+  const handleFinishConfirm = async (selectedInstanceId: number) => {
     if (selectedInstanceId === null) return;
 
     const instance = gameInstances.find((inst) => inst.id === selectedInstanceId);
+
     if (!instance) {
-      showSnackbar("Error: Could not find the game instance.");
-      handleFinishDialogClose();
+      showSnackbar("Error: game instance is empty.");
       return;
     }
 
@@ -223,7 +225,6 @@ const Home = () => {
       !instance.start_time
     ) {
       showSnackbar("Nothing to save: Missing required fields.");
-      handleFinishDialogClose();
       return;
     }
 
@@ -235,8 +236,6 @@ const Home = () => {
       console.error("Error saving game:", error);
       showSnackbar("Error: Failed to save game.");
     }
-
-    handleFinishDialogClose();
   };
 
   const handleSnackbarClose = () => {
@@ -329,6 +328,12 @@ const Home = () => {
                               <Button
                                 color="primary"
                                 onClick={() => startGame(instance.id)}
+                                sx={{
+                                  transition: 'transform 0.3s',
+                                  '&:hover': {
+                                    transform: 'scale(1.1)', // Slightly scales the button on hover
+                                  },
+                                }}
                                 startIcon={<PlayArrowIcon />}
                                 disabled={Boolean(instance.start_time)}
                               />
@@ -340,6 +345,12 @@ const Home = () => {
                                 color="warning"
                                 onClick={() => resetGame(instance.id)}
                                 startIcon={<RestartAltIcon />}
+                                sx={{
+                                  transition: 'transform 0.3s',
+                                  '&:hover': {
+                                    transform: 'scale(1.1)', // Slightly scales the button on hover
+                                  },
+                                }}
                                 disabled={!instance.start_time}
                               />
                             </Tooltip>
@@ -348,10 +359,18 @@ const Home = () => {
                             <Tooltip title="Finish">
                               <Button
                                 color="success"
-                                onClick={() => handleFinishDialogOpen(instance.id)}
+                                sx={{
+                                  transition: 'transform 0.s, background-color 0.6s, color 0.6s',
+                                  '&:hover': {
+                                    transform: 'scale(1.1)', // Slightly scales the button on hover
+                                    backgroundColor: '#ffcccb', // Change to a custom color during hover
+                                    color: '#1877F2', // Change the text/icon color
+                                  },
+                                }}
+                                onClick={() => handleFinishConfirm(instance.id)}
                                 startIcon={<CheckCircleIcon />}
-                                disabled={!instance.start_time}
-                              />
+                                disabled={!instance.start_time || !Boolean(getTimerFromLocalStorage(instance.id.toString()))}
+                                />
                             </Tooltip>
                           </Grid>
                         </Grid>
@@ -369,7 +388,7 @@ const Home = () => {
         </Container>
       </main>
 
-      {/* Finish dialog */}
+      {/* Finish dialog
       <Dialog open={openFinishDialog} onClose={handleFinishDialogClose}>
         <DialogTitle>Finish Game</DialogTitle>
         <DialogContent>
@@ -385,7 +404,7 @@ const Home = () => {
             Confirm
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
 
       {/* Snackbar for notifications */}
       <Snackbar
