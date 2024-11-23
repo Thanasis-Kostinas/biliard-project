@@ -81,7 +81,7 @@ const Options = () => {
   return (
     <Container>
       <Typography variant="h4" gutterBottom align="center">
-        Manage Your Games
+        Διαχείριση
       </Typography>
 
       {/* Back Button */}
@@ -91,7 +91,7 @@ const Options = () => {
         onClick={() => navigate(-1)}
         style={{ marginBottom: "20px" }}
       >
-        Back
+        πισω
       </Button>
 
       {loading ? (
@@ -105,9 +105,9 @@ const Options = () => {
               <Table size="medium">
                 <TableHead>
                   <TableRow>
-                    <TableCell style={{ fontWeight: 'bold' }}>Category</TableCell>
-                    <TableCell style={{ fontWeight: 'bold' }}>Name</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', textAlign: 'center' }}>Actions</TableCell>
+                    <TableCell style={{ fontWeight: 'bold' }}>Κατηγορία</TableCell>
+                    <TableCell style={{ fontWeight: 'bold' }}>Όνομα</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', textAlign: 'center' }}>Ενέργειες</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -144,7 +144,7 @@ const Options = () => {
             </TableContainer>
           ) : (
             <Typography variant="h6" style={{ marginTop: "20px", textAlign: "center" }}>
-              No game instances available.
+              Μη διαθέσιμο.
             </Typography>
           )}
         </>
@@ -152,19 +152,19 @@ const Options = () => {
 
       {/* Confirmation Dialog */}
       <Dialog open={open} onClose={handleDeleteCancel}>
-        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogTitle>Επιβεβαίωση Ενέγειας</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete the game instance{" "}
+            Είσαι σίγουρος ότι θες να διαγράψεις{" "}
             {selectedInstance ? `${selectedInstance.category_name}: ${selectedInstance.instance_name}` : ''}?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteCancel} color="primary">
-            Cancel
+            πισω
           </Button>
           <Button onClick={handleDeleteConfirm} color="error">
-            Delete
+            διαγραφη
           </Button>
         </DialogActions>
       </Dialog>

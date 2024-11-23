@@ -108,6 +108,7 @@ impl Database {
             SELECT *
             FROM games g1
             WHERE total_cost > 0
+            AND elapsed_time > 0
             AND date(start_time) = date('now')
             AND (?1 IS NULL OR category_name = ?1)
             AND (?2 IS NULL OR instance_name = ?2)
@@ -132,6 +133,7 @@ impl Database {
             SELECT *
             FROM games g1
             WHERE total_cost > 0
+            AND elapsed_time > 0
             AND date(start_time) >= date('now', 'weekday 0', '-7 days')
             AND date(start_time) <= date('now', 'weekday 0')
             AND (?1 IS NULL OR category_name = ?1)
@@ -182,6 +184,7 @@ impl Database {
             SELECT *
             FROM games g1
             WHERE total_cost > 0
+            AND elapsed_time > 0
             AND strftime('%Y-%m', start_time) = strftime('%Y-%m', 'now')
             AND (?1 IS NULL OR category_name = ?1)
             AND (?2 IS NULL OR instance_name = ?2)

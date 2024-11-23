@@ -22,9 +22,6 @@ const AnalyticsPage = () => {
     return (
         <Container maxWidth="lg" className="analytics-container">
            
-            <Typography variant="h4" align="center" className="analytics-title">
-                Analytics Overview
-            </Typography>
             <Button
     variant="contained"
     color="primary"
@@ -33,7 +30,7 @@ const AnalyticsPage = () => {
     className="back-button"
     startIcon={<ArrowBackIcon />} // Add the icon here
 >
-    Back
+    πισω
 </Button>
             <Tabs
                 value={tabValue}
@@ -41,8 +38,8 @@ const AnalyticsPage = () => {
                 centered
                 className="analytics-tabs"
             >
-                <Tab label="Price" />
-                <Tab label="Traffic" />
+                <Tab label="Κερδη" />
+                <Tab label="Κινηση" />
             </Tabs>
             <div className="analytics-content">
                 {tabValue === 0 && <PriceAnalytics />}

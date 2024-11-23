@@ -58,11 +58,11 @@ const EditGame = () => {
     try {
       await addGame(gameData.category_name, gameData.instance_name, gameData.price_per_hour); // Add new game instance
       setMessage("New game instance created successfully!");
-      setOpenSnackbar(true);
+      // setOpenSnackbar(true);
 
       // Redirect to home page after saving
       setTimeout(() => {
-        navigate("/");
+        navigate(-1);
       }, 2000);
     } catch (error) {
       if (error instanceof Error) {
@@ -90,7 +90,7 @@ const EditGame = () => {
           <Box display="flex" flexDirection="column" alignItems="center">
             {/* Category Name */}
             <TextField
-              label="Category Name"
+              label="Όνομα Κατηγορίας"
               name="category_name"
               value={gameData.category_name}
               onChange={handleChange} // Allow editing
@@ -102,7 +102,7 @@ const EditGame = () => {
 
             {/* Instance Name */}
             <TextField
-              label="Instance Name"
+              label="Όνομα"
               name="instance_name"
               value={gameData.instance_name}
               disabled
@@ -114,7 +114,7 @@ const EditGame = () => {
 
             {/* Price per Hour */}
             <TextField
-              label="Price per Hour (€)"
+              label="Κώστος ανά Ώρα (€)"
               name="price_per_hour"
               value={gameData.price_per_hour || ""}
               onChange={handleChange}
@@ -129,10 +129,10 @@ const EditGame = () => {
         {/* Button Box for Save and Back */}
         <CardActions sx={{ justifyContent: "flex-end" }}>
           <Button variant="contained" color="primary" onClick={handleSave}>
-            Save
+            Αποθήκευση
           </Button>
           <Button variant="outlined" color="secondary" onClick={handleBack} sx={{ ml: 2 }}>
-            Back
+            Πισώ
           </Button>
         </CardActions>
       </Card>

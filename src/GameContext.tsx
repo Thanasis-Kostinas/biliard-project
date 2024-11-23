@@ -128,8 +128,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const currentElapsedTime = instance.elapsed_time !== null ? instance.elapsed_time : 0; // Default to 0 if null
     let finalElapsedTime = currentElapsedTime; // Default to the existing value
     if (finalElapsedTime < 3600) { // Assuming elapsed_time is in minutes
-        finalElapsedTime = instance.price_per_hour / 2; // Set to price_per_hour if less than 1 hour
-    }else{
+        finalElapsedTime = instance.price_per_hour / 2; // Set to price_per_hour/2 if less than 1 hour
+        alert("Το παιχνίδι διήρκεσε λιγότερο από μία ώρα. Η τιμή έχει προσαρμοστεί στη ελάχιστη χρέωση.");
+      }else{
       finalElapsedTime = roundUpToNearestHalf(instance.total_cost); 
     }
 
@@ -147,12 +148,16 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // Update the state to reflect the finished game
         setGameInstances((prevInstances) =>
-            prevInstances.map((gameInstance) =>
-                gameInstance.id === id
-                    ? { ...gameInstance, end_time: endTime } // Set the end time
-                    : gameInstance
-            )
-        );
+          prevInstances.map((gameInstance) =>
+              gameInstance.id === id
+                  ? { 
+                      ...gameInstance, 
+                      end_time: endTime, // Set the end time
+                      total_cost: finalElapsedTime // Update the total cost
+                    }
+                  : gameInstance
+          )
+      );
         localStorage.removeItem(`${id}`);
 
     } catch (error) {

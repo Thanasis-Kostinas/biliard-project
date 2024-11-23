@@ -67,15 +67,21 @@ const Home = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Prevents UI from right clicked so user cant press right  click back and go back to analytics
-//   useEffect(() => {
-//     const handleContextmenu = (e: MouseEvent) => {
-//         e.preventDefault();
-//     };
-//     document.addEventListener('contextmenu', handleContextmenu);
-//     return function cleanup() {
-//         document.removeEventListener('contextmenu', handleContextmenu);
-//     };
-// }, []);
+  //   useEffect(() => {
+  //     const handleContextmenu = (e: MouseEvent) => {
+  //         e.preventDefault();
+  //     };
+  //     document.addEventListener('contextmenu', handleContextmenu);
+  //     return function cleanup() {
+  //         document.removeEventListener('contextmenu', handleContextmenu);
+  //     };
+  // }, []);
+
+  window.addEventListener("beforeunload", () => {
+    // Clear localStorage and sessionStorage
+    localStorage.clear();
+    sessionStorage.clear();
+  });
 
   const getTimerFromLocalStorage = (instanceId: string): string | null => {
     return localStorage.getItem(instanceId);
@@ -139,8 +145,8 @@ const Home = () => {
     handleCreateCategoryClick()
   };
 
-   // Menu handling
-   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  // Menu handling
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -231,7 +237,7 @@ const Home = () => {
     try {
       await finishGame(selectedInstanceId);
       // resetGame(selectedInstanceId);
-      showSnackbar("Game saved successfully!");
+      showSnackbar("Αποθηκεύτηκε");
     } catch (error) {
       console.error("Error saving game:", error);
       showSnackbar("Error: Failed to save game.");
@@ -254,46 +260,60 @@ const Home = () => {
       >
         <div style={{ width: 250 }}>
           <Toolbar>
-          <IconButton onClick={handleDrawerToggle} sx={{ margin: '5px' }}>
-  <MenuIcon />
-</IconButton>
+            <IconButton onClick={handleDrawerToggle} sx={{ margin: '5px' }}>
+              <MenuIcon />
+            </IconButton>
             <Typography variant="h6">Μενού</Typography>
           </Toolbar>
           <Divider />
           <List>
-      <ListItem 
-        component="div" 
-        onClick={() => handleCreateCategoryClick()} 
-        sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-      >
-        <ListItemIcon><CategoryIcon /></ListItemIcon>
-        <ListItemText primary="Create Category" />
-      </ListItem>
-      <ListItem 
-        component="div" 
-        onClick={() => handleAnalyticsClick()} 
-        sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-      >
-        <ListItemIcon><BarChartIcon /></ListItemIcon>
-        <ListItemText primary="Analytics" />
-      </ListItem>
-      <ListItem 
-        component="div" 
-        onClick={() => handlePropertiesClick()} 
-        sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-      >
-        <ListItemIcon><SettingsIcon /></ListItemIcon>
-        <ListItemText primary="Settings" />
-      </ListItem>
-    </List>
+            <ListItem
+              component="div"
+              onClick={() => handleCreateCategoryClick()}
+              sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            >
+              <ListItemIcon><CategoryIcon /></ListItemIcon>
+              <ListItemText primary="Δημιουργία νέας κατηγορίας" />
+            </ListItem>
+            <ListItem
+              component="div"
+              onClick={() => handleAnalyticsClick()}
+              sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            >
+              <ListItemIcon><BarChartIcon /></ListItemIcon>
+              <ListItemText primary="Αναλυτικά" />
+            </ListItem>
+            <ListItem
+              component="div"
+              onClick={() => handlePropertiesClick()}
+              sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            >
+              <ListItemIcon><SettingsIcon /></ListItemIcon>
+              <ListItemText primary="Ρυθμίσεις" />
+            </ListItem>
+          </List>
         </div>
       </Drawer>
 
       {/* Main content */}
       <main style={{ flexGrow: 1, padding: "5px" }}>
-      <IconButton sx={{ margin: '5px' }} edge="start" color="inherit" aria-label="menu" onClick={handleDrawerToggle}>
-              <MenuIcon />
-            </IconButton>
+        <IconButton
+          sx={{
+            margin: '5px',
+            padding: '10px',  // Adjust the padding for the button
+            borderRadius: '50%',  // Make the button circular
+            '&:hover': {
+              transform: 'scale(1.1)',  // Slightly enlarge the button on hover
+            },
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',  // Add a subtle shadow
+          }}
+          edge="start"
+          color="inherit"
+          aria-label="menu"
+          onClick={handleDrawerToggle}
+        >
+          <MenuIcon />
+        </IconButton>
 
         <Container>
           {gameInstances.length > 0 ? (
@@ -301,12 +321,13 @@ const Home = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Category</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Name</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Start Time</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Elapsed Time</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Total Cost (€)</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Actions</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Κατηγορία</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Όνομα</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Χρόνος Εκκίνησης</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Συνολικός Χρόνος</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Συνολικό Κόστος
+                      (€)</TableCell>
+                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Ενέργειες</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -315,7 +336,9 @@ const Home = () => {
                       <TableCell>{instance.category_name}</TableCell>
                       <TableCell>{instance.instance_name}</TableCell>
                       <TableCell>
-                        {instance.start_time ? new Date(instance.start_time).toLocaleTimeString() : "-"}
+                      {instance.start_time 
+  ? new Date(instance.start_time).toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" }) 
+  : "-"}
                       </TableCell>
                       <TableCell>
                         {instance.elapsed_time ? formatTime(instance.elapsed_time) : "-"}
@@ -324,7 +347,7 @@ const Home = () => {
                       <TableCell>
                         <Grid container spacing={0.5}>
                           <Grid item>
-                            <Tooltip title="Start">
+                            <Tooltip title="Εκκίνηση">
                               <Button
                                 color="primary"
                                 onClick={() => startGame(instance.id)}
@@ -340,7 +363,7 @@ const Home = () => {
                             </Tooltip>
                           </Grid>
                           <Grid item>
-                            <Tooltip title="Reset">
+                            <Tooltip title="Επαναφορά">
                               <Button
                                 color="warning"
                                 onClick={() => resetGame(instance.id)}
@@ -356,21 +379,20 @@ const Home = () => {
                             </Tooltip>
                           </Grid>
                           <Grid item>
-                            <Tooltip title="Finish">
+                            <Tooltip title="Λήξη">
                               <Button
                                 color="success"
                                 sx={{
                                   transition: 'transform 0.s, background-color 0.6s, color 0.6s',
                                   '&:hover': {
                                     transform: 'scale(1.1)', // Slightly scales the button on hover
-                                    backgroundColor: '#ffcccb', // Change to a custom color during hover
-                                    color: '#1877F2', // Change the text/icon color
+                                    backgroundColor: '#e1f5ea', // Change to a custom color during hover
                                   },
                                 }}
                                 onClick={() => handleFinishConfirm(instance.id)}
                                 startIcon={<CheckCircleIcon />}
                                 disabled={!instance.start_time || !Boolean(getTimerFromLocalStorage(instance.id.toString()))}
-                                />
+                              />
                             </Tooltip>
                           </Grid>
                         </Grid>
@@ -420,12 +442,12 @@ const Home = () => {
 
       {/* Password Dialog */}
       <Dialog open={openDialog} onClose={handleDialogClose}>
-        <DialogTitle>Enter Password</DialogTitle>
+        <DialogTitle>Εισαγωγή Κωδικού</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
-            label="Password"
+            label="Κωδικός "
             type="password"
             fullWidth
             variant="outlined"
@@ -435,10 +457,10 @@ const Home = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDialogClose} color="primary">
-            Cancel
+            Ακυρο
           </Button>
           <Button onClick={handlePasswordSubmit} color="primary">
-            Submit
+            Υποβολή
           </Button>
         </DialogActions>
       </Dialog>

@@ -163,7 +163,7 @@ const PriceAnalytics = () => {
         }),
         datasets: [
             {
-                label: 'Total Earnings',
+                label: 'Σύνολο Κερδών',
                 data: filteredData.map(item => item.total_cost),
                 backgroundColor: 'rgba(75,192,192,0.5)',
                 borderColor: 'rgba(75,192,192,1)',
@@ -194,13 +194,13 @@ const PriceAnalytics = () => {
         <Grid container spacing={3}>
             <Grid item xs={12}>
                 <Card style={{ padding: '2rem', borderRadius: '12px', boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)' }}>
-                    <Typography variant="h4" gutterBottom>Price Analytics</Typography>
+                    <Typography variant="h4" gutterBottom>Ανάλυση Κερδών</Typography>
 
                     <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom="1rem">
                         <FormControl variant="outlined" style={{ minWidth: 120 }}>
-                            <InputLabel>Category</InputLabel>
+                            <InputLabel>Κατηγορία</InputLabel>
                             <Select value={category} onChange={handleCategoryChange} label="Category">
-                                <MenuItem value="All">All Categories</MenuItem>
+                                <MenuItem value="All">Όλες οι κατηγορίες</MenuItem>
                                 {categories.map((cat) => (
                                     <MenuItem key={cat} value={cat}>
                                         {cat}
@@ -210,9 +210,9 @@ const PriceAnalytics = () => {
                         </FormControl>
 
                         <FormControl variant="outlined" style={{ minWidth: 120 }}>
-                            <InputLabel>Instance</InputLabel>
+                            <InputLabel>Όνομα</InputLabel>
                             <Select value={instance} onChange={handleInstanceChange} label="Instance">
-                                <MenuItem value="All">All Instances</MenuItem>
+                                <MenuItem value="All">Επιλογή Όλων</MenuItem>
                                 {instances.map((inst) => (
                                     <MenuItem key={inst} value={inst}>
                                         {inst}
@@ -222,12 +222,12 @@ const PriceAnalytics = () => {
                         </FormControl>
 
                         <FormControl variant="outlined" style={{ minWidth: 120 }}>
-                            <InputLabel>Interval</InputLabel>
+                            <InputLabel>Περίοδος</InputLabel>
                             <Select value={interval} onChange={handleIntervalChange} label="Interval">
-                                <MenuItem value="Daily">Daily</MenuItem>
-                                <MenuItem value="Weekly">Weekly</MenuItem>
-                                <MenuItem value="Monthly">Monthly</MenuItem>
-                                <MenuItem value="Custom">Custom</MenuItem>
+                                <MenuItem value="Daily">Σήμερα </MenuItem>
+                                <MenuItem value="Weekly">Ανά Βδομάδα</MenuItem>
+                                <MenuItem value="Monthly">Ανά Μήνα</MenuItem>
+                                <MenuItem value="Custom">Προσαρμογή</MenuItem>
                             </Select>
                         </FormControl>
                     </Box>
@@ -236,7 +236,7 @@ const PriceAnalytics = () => {
                         <Box display="flex" justifyContent="space-between" marginBottom="1rem">
                             <TextField
                                 type="date"
-                                label="Start Date"
+                                label="Αρχική Ημερομηνία"
                                 value={startDate}
                                 onChange={handleStartDateChange}
                                 InputLabelProps={{ shrink: true }}
@@ -245,7 +245,7 @@ const PriceAnalytics = () => {
                             />
                             <TextField
                                 type="date"
-                                label="End Date"
+                                label="Τελική Ημερομηνία"
                                 value={endDate}
                                 onChange={handleEndDateChange}
                                 InputLabelProps={{ shrink: true }}
@@ -256,7 +256,7 @@ const PriceAnalytics = () => {
                     )}
 
                     <Typography variant="h6" style={{ marginBottom: '1rem' }}>
-                        Total Earnings: €{totalEarnings.toFixed(2)}
+                        Συνολικά Κέρδη: €{totalEarnings.toFixed(2)}
                     </Typography>
 
                     <Bar data={chartData} options={chartOptions} /> {/* Use Bar chart here */}
@@ -264,27 +264,32 @@ const PriceAnalytics = () => {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell>ID</TableCell>
-                                <TableCell>Category</TableCell>
-                                <TableCell>Instance</TableCell>
-                                <TableCell>Price Per Hour</TableCell>
-                                <TableCell>Elapsed Time</TableCell>
-                                <TableCell>Total Cost</TableCell>
-                                <TableCell>Actions</TableCell>
+                            
+                                <TableCell>Κατηγορία</TableCell>
+                                <TableCell>Όνομα</TableCell>
+                                <TableCell>Τιμή ανά Ώρα</TableCell>
+                                <TableCell>Χρόνος Παιχνιδιού</TableCell>
+                                <TableCell>Κέρδος</TableCell>
+                                <TableCell>Ενέργειες</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {filteredData.map((game) => (
                                 <TableRow key={game.id}>
-                                    <TableCell>{game.id}</TableCell>
+                                   
                                     <TableCell>{game.category_name}</TableCell>
                                     <TableCell>{game.instance_name}</TableCell>
                                     <TableCell>€{game.price_per_hour.toFixed(2)}</TableCell>
-                                    <TableCell>{game.elapsed_time ? `${game.elapsed_time} hours` : 'N/A'}</TableCell>
-                                    <TableCell>€{game.total_cost.toFixed(2)}</TableCell>
+<TableCell>
+  {game.elapsed_time 
+    ? game.elapsed_time >= 3600 
+      ? `${Math.floor(game.elapsed_time / 3600)} ώρες και ${Math.floor((game.elapsed_time % 3600) / 60)} λεπτά`
+      : `${Math.floor(game.elapsed_time / 60)} λεπτά`
+    : 'N/A'}
+</TableCell>                                    <TableCell>€{game.total_cost.toFixed(2)}</TableCell>
                                     <TableCell>
                                         <Button variant="contained" color="secondary" onClick={() => handleDeleteGame(game.id)}>
-                                            Delete
+                                            διαγραφη
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -316,7 +321,7 @@ const formatDate = (dateString: string) => {
 
 const formatWeekday = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', { weekday: 'long' }); // Get the weekday name
+    return date.toLocaleString('el-GR', { weekday: 'long' }); // Get the weekday name
 };
 
 export default PriceAnalytics;

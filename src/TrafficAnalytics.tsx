@@ -178,15 +178,15 @@ const TrafficAnalytics = () => {
             }
         },
         xaxis: { type: 'datetime' },
-        title: { text: 'Traffic Analytics', align: 'center', style: { fontSize: '20px' } },
-        yaxis: { title: { text: 'Game Instances' } },
+        title: { text: 'Ανάλυση Κίνησης', align: 'center', style: { fontSize: '20px' } },
+        yaxis: { title: { text: 'Όνομα ' } },
     };
 
     const weeklyChartOptions: ApexOptions = {
         chart: { type: 'bar', height: 200 },
         plotOptions: { bar: { columnWidth: '55%' } },
-        xaxis: { categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] },
-        yaxis: { title: { text: 'Total Games Played' } },
+        xaxis: { categories: ['ΔΕΥ', 'ΤΡΙ', 'ΤΕΤ', 'ΠΕΜ', 'ΠΑΡ', 'ΣΑΒ', 'ΚΥΡ'] },
+        yaxis: { title: { text: 'Σύνολο ' } },
         fill: { opacity: 1 },
         tooltip: { y: { formatter: (val) => `${val} games` } },
         colors: Object.values(categoryColors),
@@ -196,7 +196,7 @@ const TrafficAnalytics = () => {
         <Grid container spacing={2}>
             <Grid item xs={12}>
                 <Card sx={{ padding: 3, boxShadow: 2 }}>
-                    <Typography variant="h5" sx={{ mb: 2 }}>Traffic Analytics</Typography>
+                    <Typography variant="h5" sx={{ mb: 2 }}>Ανάλυση Κίνησης</Typography>
                     <Grid container spacing={2} alignItems="center">
                         <Grid item>
                             <Select
@@ -204,14 +204,14 @@ const TrafficAnalytics = () => {
                                 onChange={(e) => setDateOption(e.target.value as 'daily' | 'custom')}
                                 sx={{ marginRight: 2 }}
                             >
-                                <MenuItem value="daily">Daily</MenuItem>
-                                <MenuItem value="custom">Custom</MenuItem>
+                                <MenuItem value="daily">Σήμερα</MenuItem>
+                                <MenuItem value="custom">Προσαρμογή</MenuItem>
                             </Select>
                         </Grid>
                         {dateOption === 'custom' && (
                             <Grid item>
                                 <TextField
-                                    label="Select Date"
+                                    label="Επιλογή Ημερονηνίας"
                                     type="date"
                                     value={selectedDate}
                                     onChange={(e) => setSelectedDate(e.target.value)}
@@ -235,7 +235,7 @@ const TrafficAnalytics = () => {
 
             <Grid item xs={12}>
                 <Card sx={{ padding: 3, boxShadow: 2 }}>
-                    <Typography variant="h5" sx={{ mb: 2 }}>Weekly Traffic Overview</Typography>
+                    <Typography variant="h5" sx={{ mb: 2 }}>Εβδομαδιαία Επισκόπηση Κίνησης</Typography>
                     {loading ? (
                         <CircularProgress sx={{ marginTop: 2 }} />
                     ) : (

@@ -13,10 +13,13 @@ import {
 
 // Enum for predefined categories
 const GameCategories = {
-  BILLIARDS: "Billiards",
-  POOL: "Pool",
-  SNOOKER: "Snooker",
-  CUSTOM: "Custom", // New Custom option
+  BILLIARDS: "Μπιλιάρδο ",
+  POOL: "Γαλλικό Μπιλιάρδο",
+  SNOOKER: "Ποδοσφαιράκι",
+  PING_PONG: "Ping Pong",
+  DARTS: "Βελάκια",
+
+  CUSTOM: "Προσαρμογή", // New Custom option
 };
 
 const CreateCategory = () => {
@@ -69,7 +72,7 @@ const CreateCategory = () => {
     <Container maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, mt: 5 }}>
         <Typography variant="h4" gutterBottom>
-          Διμηουργησε νεα κατηγορια
+          Δημιούργησε μια νέα κατηγορία
         </Typography>
 
         <form onSubmit={handleSubmit}>
@@ -77,7 +80,7 @@ const CreateCategory = () => {
           <Box mb={3}>
             <TextField
               select
-              label="Category"
+              label="Κατηγορία"
               fullWidth
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -98,7 +101,7 @@ const CreateCategory = () => {
           {category === GameCategories.CUSTOM && (
             <Box mb={3}>
               <TextField
-                label="Custom Category"
+                label="Όνομα Κατηγορίας"
                 fullWidth
                 value={customCategory}
                 onChange={(e) => setCustomCategory(e.target.value)}
@@ -110,7 +113,7 @@ const CreateCategory = () => {
           {/* Instance Name */}
           <Box mb={3}>
             <TextField
-              label="Instance Name"
+              label="Όνομα"
               fullWidth
               value={instanceName}
               onChange={(e) => setInstanceName(e.target.value)}
@@ -121,7 +124,7 @@ const CreateCategory = () => {
           {/* Price per Hour */}
           <Box mb={3}>
             <TextField
-              label="Price per Hour (€)"
+              label="Τιμή ανά Ώρα (€)"
               type="number"
               fullWidth
               value={pricePerHour}
@@ -138,10 +141,10 @@ const CreateCategory = () => {
               onClick={() => navigate("/")}
               sx={{ flexGrow: 1, marginRight: 1 }}
             >
-              Back
+              πισω
             </Button>
             <Button variant="contained" color="primary" type="submit" sx={{ flexGrow: 1 }}>
-              Create Game
+              Δημιουργεια Παιχνιδιου
             </Button>
           </Box>
         </form>
