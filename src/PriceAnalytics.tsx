@@ -3,6 +3,7 @@ import {
     Accordion,
     AccordionSummary,
     AccordionDetails,
+    CardContent,
     Grid,
     Card,
     Typography,
@@ -22,7 +23,7 @@ import {
     Button
 } from '@mui/material';
 import { invoke } from '@tauri-apps/api/tauri';
-import { SelectChangeEvent } from "@mui/material"; 
+import { SelectChangeEvent } from "@mui/material";
 import { Bar } from 'react-chartjs-2'; // Import Bar instead of Line
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
@@ -158,8 +159,8 @@ const PriceAnalytics = () => {
             return interval === 'Daily'
                 ? formatTime(item.start_time)
                 : interval === 'Weekly'
-                ? formatWeekday(item.start_time)
-                : formatDate(item.start_time);
+                    ? formatWeekday(item.start_time)
+                    : formatDate(item.start_time);
         }),
         datasets: [
             {
@@ -191,15 +192,22 @@ const PriceAnalytics = () => {
     }
 
     return (
-        <Grid container spacing={3}>
-            <Grid item xs={12}>
-                <Card style={{ padding: '2rem', borderRadius: '12px', boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)' }}>
-                    <Typography variant="h4" gutterBottom>Ανάλυση Κερδών</Typography>
+        <Grid item xs={12}>
+            <Card
+                sx={{
+                    padding: '2rem',
+                    borderRadius: '16px', // Slightly more rounded corners
+                    boxShadow: '0px 12px 24px rgba(0, 0, 0, 0.1)', // Stronger 3D shadow for more depth
+                    background: 'linear-gradient(145deg, #ffffff, #f1f1f1)', // Light gradient for background
+
+                }}
+            >
+                <CardContent>
 
                     <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom="1rem">
-                        <FormControl variant="outlined" style={{ minWidth: 120 }}>
+                        <FormControl variant="outlined" sx={{ minWidth: 120 }}>
                             <InputLabel>Κατηγορία</InputLabel>
-                            <Select value={category} onChange={handleCategoryChange} label="Category">
+                            <Select value={category} onChange={handleCategoryChange} label="Κατηγορία">
                                 <MenuItem value="All">Όλες οι κατηγορίες</MenuItem>
                                 {categories.map((cat) => (
                                     <MenuItem key={cat} value={cat}>
@@ -209,9 +217,9 @@ const PriceAnalytics = () => {
                             </Select>
                         </FormControl>
 
-                        <FormControl variant="outlined" style={{ minWidth: 120 }}>
+                        <FormControl variant="outlined" sx={{ minWidth: 120 }}>
                             <InputLabel>Όνομα</InputLabel>
-                            <Select value={instance} onChange={handleInstanceChange} label="Instance">
+                            <Select value={instance} onChange={handleInstanceChange} label="Όνομα">
                                 <MenuItem value="All">Επιλογή Όλων</MenuItem>
                                 {instances.map((inst) => (
                                     <MenuItem key={inst} value={inst}>
@@ -221,10 +229,10 @@ const PriceAnalytics = () => {
                             </Select>
                         </FormControl>
 
-                        <FormControl variant="outlined" style={{ minWidth: 120 }}>
+                        <FormControl variant="outlined" sx={{ minWidth: 120 }}>
                             <InputLabel>Περίοδος</InputLabel>
-                            <Select value={interval} onChange={handleIntervalChange} label="Interval">
-                                <MenuItem value="Daily">Σήμερα </MenuItem>
+                            <Select value={interval} onChange={handleIntervalChange} label="Περίοδος">
+                                <MenuItem value="Daily">Σήμερα</MenuItem>
                                 <MenuItem value="Weekly">Ανά Βδομάδα</MenuItem>
                                 <MenuItem value="Monthly">Ανά Μήνα</MenuItem>
                                 <MenuItem value="Custom">Προσαρμογή</MenuItem>
@@ -233,7 +241,13 @@ const PriceAnalytics = () => {
                     </Box>
 
                     {interval === 'Custom' && (
-                        <Box display="flex" justifyContent="space-between" marginBottom="1rem">
+                        <Box
+                            display="flex"
+                            flexDirection={{ xs: 'column', sm: 'row' }}
+                            justifyContent="space-between"
+                            gap={2}
+                            marginBottom="1rem"
+                        >
                             <TextField
                                 type="date"
                                 label="Αρχική Ημερομηνία"
@@ -241,7 +255,12 @@ const PriceAnalytics = () => {
                                 onChange={handleStartDateChange}
                                 InputLabelProps={{ shrink: true }}
                                 variant="outlined"
-                                style={{ width: '48%' }}
+                                sx={{
+                                    width: { xs: '100%', sm: '48%' },
+                                    backgroundColor: '#fff', // Light background for text fields
+                                    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)', // Subtle shadow
+                                    borderRadius: '8px', // Rounded edges
+                                }}
                             />
                             <TextField
                                 type="date"
@@ -250,45 +269,151 @@ const PriceAnalytics = () => {
                                 onChange={handleEndDateChange}
                                 InputLabelProps={{ shrink: true }}
                                 variant="outlined"
-                                style={{ width: '48%' }}
+                                sx={{
+                                    width: { xs: '100%', sm: '48%' },
+                                    backgroundColor: '#fff',
+                                    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+                                    borderRadius: '8px',
+                                }}
                             />
                         </Box>
                     )}
 
-                    <Typography variant="h6" style={{ marginBottom: '1rem' }}>
-                        Συνολικά Κέρδη: €{totalEarnings.toFixed(2)}
-                    </Typography>
 
-                    <Bar data={chartData} options={chartOptions} /> {/* Use Bar chart here */}
+<Typography
+    variant="h4"
+    sx={{
+        marginBottom: '1rem', // Space below the text
+        textAlign: 'center', // Center the text
+        fontWeight: 'bold', // Make the text bold
+        color: '#281c24', // Use a dark color for better contrast
+        backgroundColor: '#f9f9f9', // Subtle background to highlight
+        padding: '10px 20px', // Add padding around the text
+        borderRadius: '8px', // Smooth rounded corners
+        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)', // Light shadow for depth
+    }}
+>
+    Συνολικά Κέρδη: €{totalEarnings.toFixed(2)}
+</Typography>
 
-                    <Table>
+                    <Box
+                        sx={{
+                            padding: '16px', // Add some padding around the chart
+                            margin: '0 auto', // Center the box horizontally
+                            borderRadius: '8px', // Rounded corners
+                            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', // Light shadow for 3D effect
+                            backgroundColor: '#fff', // White background for contrast
+                            display: 'flex', // To maintain the flex layout if you have multiple components inside
+                            justifyContent: 'center', // Centers the chart horizontally inside the box
+                        }}
+                    >
+                        <Bar data={chartData} options={chartOptions} /> {/* Bar chart here */}
+                    </Box>
+                    <Table sx={{ boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.05)', borderRadius: '8px' }}>
                         <TableHead>
-                            <TableRow>
-                            
-                                <TableCell>Κατηγορία</TableCell>
-                                <TableCell>Όνομα</TableCell>
-                                <TableCell>Τιμή ανά Ώρα</TableCell>
-                                <TableCell>Χρόνος Παιχνιδιού</TableCell>
-                                <TableCell>Κέρδος</TableCell>
-                                <TableCell>Ενέργειες</TableCell>
+                            <TableRow sx={{
+                                backgroundColor: '#f9f9f9', // Light background for row
+                                '&:hover': {
+                                    backgroundColor: '#f1f1f1', // Slight darkening on hover
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', // Hover shadow
+                                },
+                                borderRadius: '8px', // Rounded corners for row
+                            }}>
+                                <TableCell
+                                    sx={{
+                                        fontWeight: 'bold', // Bold text for header cells
+                                        fontSize: '1rem', // Adjust size for clarity
+                                        color: '#333', // Dark text color
+                                        padding: '12px 16px', // Add padding for better readability
+                                        borderBottom: '1px solid #e0e0e0', // Subtle bottom border for separation
+                                    }}
+                                >
+                                    Κατηγορία
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        fontWeight: 'bold',
+                                        fontSize: '1rem',
+                                        color: '#333',
+                                        padding: '12px 16px',
+                                        borderBottom: '1px solid #e0e0e0',
+                                    }}
+                                >
+                                    Όνομα
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        fontWeight: 'bold',
+                                        fontSize: '1rem',
+                                        color: '#333',
+                                        padding: '12px 16px',
+                                        borderBottom: '1px solid #e0e0e0',
+                                    }}
+                                >
+                                    Τιμή ανά Ώρα
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        fontWeight: 'bold',
+                                        fontSize: '1rem',
+                                        color: '#333',
+                                        padding: '12px 16px',
+                                        borderBottom: '1px solid #e0e0e0',
+                                    }}
+                                >
+                                    Χρόνος Παιχνιδιού
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        fontWeight: 'bold',
+                                        fontSize: '1rem',
+                                        color: '#333',
+                                        padding: '12px 16px',
+                                        borderBottom: '1px solid #e0e0e0',
+                                    }}
+                                >
+                                    Κέρδος
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        fontWeight: 'bold',
+                                        fontSize: '1rem',
+                                        color: '#333',
+                                        padding: '12px 16px',
+                                        borderBottom: '1px solid #e0e0e0',
+                                    }}
+                                >
+                                    Ενέργειες
+                                </TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {filteredData.map((game) => (
                                 <TableRow key={game.id}>
-                                   
                                     <TableCell>{game.category_name}</TableCell>
                                     <TableCell>{game.instance_name}</TableCell>
                                     <TableCell>€{game.price_per_hour.toFixed(2)}</TableCell>
-<TableCell>
-  {game.elapsed_time 
-    ? game.elapsed_time >= 3600 
-      ? `${Math.floor(game.elapsed_time / 3600)} ώρες και ${Math.floor((game.elapsed_time % 3600) / 60)} λεπτά`
-      : `${Math.floor(game.elapsed_time / 60)} λεπτά`
-    : 'N/A'}
-</TableCell>                                    <TableCell>€{game.total_cost.toFixed(2)}</TableCell>
                                     <TableCell>
-                                        <Button variant="contained" color="secondary" onClick={() => handleDeleteGame(game.id)}>
+                                        {game.elapsed_time
+                                            ? game.elapsed_time >= 3600
+                                                ? `${Math.floor(game.elapsed_time / 3600)} ώρες και ${Math.floor((game.elapsed_time % 3600) / 60)} λεπτά`
+                                                : `${Math.floor(game.elapsed_time / 60)} λεπτά`
+                                            : 'N/A'}
+                                    </TableCell>
+                                    <TableCell>€{game.total_cost.toFixed(2)}</TableCell>
+                                    <TableCell>
+                                        <Button
+                                            variant="contained"
+                                            color="secondary"
+                                            onClick={() => handleDeleteGame(game.id)}
+                                            sx={{
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'scale(1.05)', // Slight scale effect on hover
+                                                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.15)', // Subtle shadow on hover
+                                                },
+                                            }}
+                                        >
                                             διαγραφη
                                         </Button>
                                     </TableCell>
@@ -303,8 +428,8 @@ const PriceAnalytics = () => {
                         onClose={() => setSnackbarOpen(false)}
                         message={snackbarMessage}
                     />
-                </Card>
-            </Grid>
+                </CardContent>
+            </Card>
         </Grid>
     );
 };

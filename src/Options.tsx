@@ -24,6 +24,8 @@ import { useGameContext, GameInstance } from "./GameContext";
 import { invoke } from "@tauri-apps/api/tauri";
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Import the icon
+
 
 const Options = () => {
   const {
@@ -31,7 +33,7 @@ const Options = () => {
     setGameInstances,
     deleteGame,
   } = useGameContext();
-  const navigate = useNavigate();  
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [selectedInstance, setSelectedInstance] = useState<GameInstance | null>(null);
@@ -80,18 +82,41 @@ const Options = () => {
 
   return (
     <Container>
-      <Typography variant="h4" gutterBottom align="center">
+      <Typography
+        variant="h4"
+        gutterBottom
+        align="center"
+        sx={{
+          fontWeight: 'bold',
+          marginTop: '15px',
+          color: '#333',
+          textShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
+          marginBottom: '1.5rem',
+        }}
+      >
         Διαχείριση
       </Typography>
 
       {/* Back Button */}
       <Button
-        variant="outlined"
+        variant="contained"
         color="primary"
-        onClick={() => navigate(-1)}
-        style={{ marginBottom: "20px" }}
+        onClick={() => navigate("/")}
+        className="back-button"
+        sx={{
+          marginRight: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px', // Space between icon and text
+          padding: '8px 16px',
+          borderRadius: '8px',
+          textTransform: 'none',
+          fontWeight: 'bold',
+          boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.15)',
+        }}
+        startIcon={<ArrowBackIcon />}
       >
-        πισω
+        ΠΙΣΩ
       </Button>
 
       {loading ? (
@@ -102,12 +127,47 @@ const Options = () => {
         <>
           {gameInstances.length > 0 ? (
             <TableContainer component={Paper} style={{ marginTop: "20px" }}>
-              <Table size="medium">
+              <Table size="small">
                 <TableHead>
-                  <TableRow>
-                    <TableCell style={{ fontWeight: 'bold' }}>Κατηγορία</TableCell>
-                    <TableCell style={{ fontWeight: 'bold' }}>Όνομα</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', textAlign: 'center' }}>Ενέργειες</TableCell>
+                  <TableRow style={{
+                    background: 'linear-gradient(145deg, #2c2c2c, #464646)', // Darker blackish to lighter black gradient
+                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)', // Subtle shadow for depth on the whole row
+                    borderRadius: '4px', // Soft rounding for the row's corners to enhance the 3D effect
+                    transition: 'all 0.3s ease', // Smooth transition for any hover effects
+                  }}>
+                    <TableCell style={{
+                      fontWeight: 'bold',
+                      color: '#FFFEFF', // Light text color
+                      textAlign: 'center',
+                      padding: '8px',
+                      boxShadow: 'none', // Remove inner shadow for seamless look
+                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
+                      border: 'none', // Remove borders
+                    }}>
+                      Κατηγορία
+                    </TableCell>
+                    <TableCell style={{
+                      fontWeight: 'bold',
+                      color: '#FFFEFF',
+                      textAlign: 'center',
+                      padding: '8px',
+                      boxShadow: 'none', // Remove inner shadow for seamless look
+                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
+                      border: 'none', // Remove borders
+                    }}>
+                      Όνομα
+                    </TableCell>
+                    <TableCell style={{
+                      fontWeight: 'bold',
+                      color: '#FFFEFF',
+                      textAlign: 'center',
+                      padding: '8px',
+                      boxShadow: 'none', // Remove inner shadow for seamless look
+                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
+                      border: 'none', // Remove borders
+                    }}>
+                      Ενέργειες
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -160,12 +220,37 @@ const Options = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteCancel} color="primary">
-            πισω
-          </Button>
-          <Button onClick={handleDeleteConfirm} color="error">
-            διαγραφη
-          </Button>
+        <Button
+  onClick={handleDeleteCancel}
+  color="primary"
+  sx={{
+    marginRight: 1,
+    borderRadius: '8px',
+    textTransform: 'none',
+    fontWeight: 'bold',
+    '&:hover': {
+      backgroundColor: 'rgba(0, 123, 255, 0.1)', // Subtle hover effect
+    },
+  }}
+>
+  ΠΙΣΩ
+</Button>
+<Button
+  onClick={handleDeleteConfirm}
+  color="error"
+  variant="contained"
+  sx={{
+    borderRadius: '8px',
+    textTransform: 'none',
+    fontWeight: 'bold',
+    boxShadow: '0px 4px 6px rgba(255, 0, 0, 0.3)', // Adds a subtle shadow
+    '&:hover': {
+      backgroundColor: '#d32f2f', // Darker hover effect for danger
+    },
+  }}
+>
+  Διαγραφή
+</Button>
         </DialogActions>
       </Dialog>
     </Container>

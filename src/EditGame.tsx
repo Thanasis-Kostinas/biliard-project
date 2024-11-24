@@ -13,6 +13,8 @@ import {
   CardActions,
 } from "@mui/material";
 import { useGameContext } from "./GameContext";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Import the icon
+
 
 const EditGame = () => {
   const { id } = useParams<{ id: string }>(); // Get ID from the URL
@@ -81,23 +83,52 @@ const EditGame = () => {
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
-      <Card variant="outlined">
+      <Card
+        variant="outlined"
+        sx={{
+          padding: 3,
+          boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+          borderRadius: "12px",
+          backgroundColor: "#f9f9f9", // Light background
+        }}
+      >
         <CardContent>
-          <Typography variant="h5" gutterBottom align="center">
-            Edit Game
+          <Typography
+            variant="h5"
+            gutterBottom
+            align="center"
+            sx={{
+              fontWeight: 600,
+              color: "#333",
+            }}
+          >
+            Επεξεργασία Παιχνιδιού
           </Typography>
 
-          <Box display="flex" flexDirection="column" alignItems="center">
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            gap={2}
+            sx={{
+              mt: 2,
+            }}
+          >
             {/* Category Name */}
             <TextField
               label="Όνομα Κατηγορίας"
               name="category_name"
               value={gameData.category_name}
-              onChange={handleChange} // Allow editing
+              onChange={handleChange}
               fullWidth
               disabled
               margin="normal"
               variant="outlined"
+              sx={{
+                "& .MuiInputBase-input.Mui-disabled": {
+                  backgroundColor: "#f1f1f1", // Light grey for disabled fields
+                },
+              }}
             />
 
             {/* Instance Name */}
@@ -105,16 +136,21 @@ const EditGame = () => {
               label="Όνομα"
               name="instance_name"
               value={gameData.instance_name}
-              disabled
-              onChange={handleChange} // Allow editing
+              onChange={handleChange}
               fullWidth
               margin="normal"
               variant="outlined"
+              disabled
+              sx={{
+                "& .MuiInputBase-input.Mui-disabled": {
+                  backgroundColor: "#f1f1f1",
+                },
+              }}
             />
 
             {/* Price per Hour */}
             <TextField
-              label="Κώστος ανά Ώρα (€)"
+              label="Κόστος ανά Ώρα (€)"
               name="price_per_hour"
               value={gameData.price_per_hour || ""}
               onChange={handleChange}
@@ -122,20 +158,56 @@ const EditGame = () => {
               fullWidth
               margin="normal"
               variant="outlined"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.1)",
+                },
+              }}
             />
           </Box>
         </CardContent>
 
         {/* Button Box for Save and Back */}
-        <CardActions sx={{ justifyContent: "flex-end" }}>
-          <Button variant="contained" color="primary" onClick={handleSave}>
-            Αποθήκευση
+        <CardActions sx={{ justifyContent: "space-between", mt: 2 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleBack}
+            className="back-button"
+            sx={{
+              marginRight: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px', // Space between icon and text
+              padding: '8px 16px',
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 'bold',
+              boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.15)',
+            }}
+            startIcon={<ArrowBackIcon />}
+          >
+            ΠΙΣΩ
           </Button>
-          <Button variant="outlined" color="secondary" onClick={handleBack} sx={{ ml: 2 }}>
-            Πισώ
+        
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSave}
+            sx={{
+              flexGrow: 1,
+              marginRight: 1,
+              backgroundColor: "#1976d2", // Primary blue
+              "&:hover": {
+                backgroundColor: "#125ea5", // Darker blue on hover
+              },
+            }}
+          >
+            Αποθήκευση
           </Button>
         </CardActions>
       </Card>
+
 
       {/* Snackbar for success message */}
       <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleSnackbarClose}>

@@ -88,7 +88,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         game => !(game.category_name === category && game.instance_name === instanceName)
       ));
       
-      alert("Game deleted successfully!");
+      alert("Το παιχνίδι διαγράφηκε με επιτυχία!");
     } catch (error) {
       console.error('Error deleting game:', error);
       alert("Failed to delete game: " + error);
@@ -129,7 +129,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let finalElapsedTime = currentElapsedTime; // Default to the existing value
     if (finalElapsedTime < 3600) { // Assuming elapsed_time is in minutes
         finalElapsedTime = instance.price_per_hour / 2; // Set to price_per_hour/2 if less than 1 hour
-        alert("Το παιχνίδι διήρκεσε λιγότερο από μία ώρα. Η τιμή έχει προσαρμοστεί στη ελάχιστη χρέωση.");
       }else{
       finalElapsedTime = roundUpToNearestHalf(instance.total_cost); 
     }

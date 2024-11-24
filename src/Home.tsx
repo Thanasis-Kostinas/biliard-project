@@ -1,46 +1,43 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import CategoryIcon from "@mui/icons-material/Category";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import MenuIcon from "@mui/icons-material/Menu";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
-  AppBar,
-  Toolbar,
-  Typography,
+  Alert,
   Button,
-  Menu,
-  MenuItem,
-  IconButton,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Drawer,
   Grid,
+  IconButton,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Tooltip,
-  Snackbar,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
+  Toolbar,
+  Tooltip,
+  Typography
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import CategoryIcon from "@mui/icons-material/Category";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import SettingsIcon from "@mui/icons-material/Settings";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { useGameContext, GameInstance } from "./GameContext";
 import { invoke } from "@tauri-apps/api/tauri";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { GameInstance, useGameContext } from "./GameContext";
 import './Home.css'; // Adjust the path if your CSS file is in a different folder
 
 const Home = () => {
@@ -176,7 +173,7 @@ const Home = () => {
       }
       navigate(redirectToAnalytics ? "/analytics" : "/create-category");
     } else {
-      showSnackbar("Incorrect password.");
+      showSnackbar("Λάθος κωδικός πρόσβασης");;
     }
   };
 
@@ -270,25 +267,60 @@ const Home = () => {
             <ListItem
               component="div"
               onClick={() => handleCreateCategoryClick()}
-              sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              sx={{
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'transform 0.2s ease, background-color 0.2s ease',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                },
+              }}
             >
-              <ListItemIcon><CategoryIcon /></ListItemIcon>
+              <ListItemIcon>
+                <CategoryIcon />
+              </ListItemIcon>
               <ListItemText primary="Δημιουργία νέας κατηγορίας" />
             </ListItem>
+
             <ListItem
               component="div"
               onClick={() => handleAnalyticsClick()}
-              sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              sx={{
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'transform 0.2s ease, background-color 0.2s ease',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                },
+              }}
             >
-              <ListItemIcon><BarChartIcon /></ListItemIcon>
+              <ListItemIcon>
+                <BarChartIcon />
+              </ListItemIcon>
               <ListItemText primary="Αναλυτικά" />
             </ListItem>
+
             <ListItem
               component="div"
               onClick={() => handlePropertiesClick()}
-              sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              sx={{
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'transform 0.2s ease, background-color 0.2s ease',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                },
+              }}
             >
-              <ListItemIcon><SettingsIcon /></ListItemIcon>
+              <ListItemIcon>
+                <SettingsIcon />
+              </ListItemIcon>
               <ListItemText primary="Ρυθμίσεις" />
             </ListItem>
           </List>
@@ -320,15 +352,81 @@ const Home = () => {
             <TableContainer component={Paper} style={{ marginTop: "10px" }}>
               <Table size="small">
                 <TableHead>
-                  <TableRow>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Κατηγορία</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Όνομα</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Χρόνος Εκκίνησης</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Συνολικός Χρόνος</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Συνολικό Κόστος
-                      (€)</TableCell>
-                    <TableCell style={{ fontWeight: 'bold', backgroundColor: '#f7eded' }}>Ενέργειες</TableCell>
+                  <TableRow style={{
+                    background: 'linear-gradient(145deg, #2c2c2c, #464646)', // Darker blackish to lighter black gradient
+
+                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)', // Subtle shadow for depth on the whole row
+                    borderRadius: '4px', // Soft rounding for the row's corners to enhance the 3D effect
+                    transition: 'all 0.3s ease', // Smooth transition for any hover effects
+                  }}>
+                    <TableCell style={{
+                      fontWeight: 'bold',
+                      color: '#FFFEFF', // Light text color
+                      textAlign: 'center',
+                      padding: '8px',
+                      boxShadow: 'none', // Remove inner shadow for seamless look
+                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
+                      border: 'none', // Remove borders
+                    }}>
+                      Κατηγορία
+                    </TableCell>
+                    <TableCell style={{
+                      fontWeight: 'bold',
+                      color: '#FFFEFF',
+                      textAlign: 'center',
+                      padding: '8px',
+                      boxShadow: 'none', // Remove inner shadow for seamless look
+                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
+                      border: 'none', // Remove borders
+                    }}>
+                      Όνομα
+                    </TableCell>
+                    <TableCell style={{
+                      fontWeight: 'bold',
+                      color: '#FFFEFF',
+                      textAlign: 'center',
+                      padding: '8px',
+                      boxShadow: 'none', // Remove inner shadow for seamless look
+                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
+                      border: 'none', // Remove borders
+                    }}>
+                      Χρόνος Εκκίνησης
+                    </TableCell>
+                    <TableCell style={{
+                      fontWeight: 'bold',
+                      color: '#FFFEFF',
+                      textAlign: 'center',
+                      padding: '8px',
+                      boxShadow: 'none', // Remove inner shadow for seamless look
+                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
+                      border: 'none', // Remove borders
+                    }}>
+                      Συνολικός Χρόνος
+                    </TableCell>
+                    <TableCell style={{
+                      fontWeight: 'bold',
+                      color: '#FFFEFF',
+                      textAlign: 'center',
+                      padding: '8px',
+                      boxShadow: 'none', // Remove inner shadow for seamless look
+                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
+                      border: 'none', // Remove borders
+                    }}>
+                      Συνολικό Κόστος (€)
+                    </TableCell>
+                    <TableCell style={{
+                      fontWeight: 'bold',
+                      color: '#FFFEFF',
+                      textAlign: 'center',
+                      padding: '8px',
+                      boxShadow: 'none', // Remove inner shadow for seamless look
+                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
+                      border: 'none', // Remove borders
+                    }}>
+                      Ενέργειες
+                    </TableCell>
                   </TableRow>
+
                 </TableHead>
                 <TableBody>
                   {gameInstances.map((instance) => (
@@ -336,9 +434,9 @@ const Home = () => {
                       <TableCell>{instance.category_name}</TableCell>
                       <TableCell>{instance.instance_name}</TableCell>
                       <TableCell>
-                      {instance.start_time 
-  ? new Date(instance.start_time).toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" }) 
-  : "-"}
+                        {instance.start_time
+                          ? new Date(instance.start_time).toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" })
+                          : "-"}
                       </TableCell>
                       <TableCell>
                         {instance.elapsed_time ? formatTime(instance.elapsed_time) : "-"}
@@ -349,7 +447,6 @@ const Home = () => {
                           <Grid item>
                             <Tooltip title="Εκκίνηση">
                               <Button
-                                color="primary"
                                 onClick={() => startGame(instance.id)}
                                 sx={{
                                   transition: 'transform 0.3s',
@@ -357,9 +454,16 @@ const Home = () => {
                                     transform: 'scale(1.1)', // Slightly scales the button on hover
                                   },
                                 }}
-                                startIcon={<PlayArrowIcon />}
+                                startIcon={
+                                  <PlayArrowIcon
+                                    sx={{
+                                      color: (theme) => (Boolean(instance.start_time) ? theme.palette.grey[500] : '#34A853'), // Green when enabled, grey when disabled
+                                    }}
+                                  />
+                                }
                                 disabled={Boolean(instance.start_time)}
-                              />
+                              >
+                              </Button>
                             </Tooltip>
                           </Grid>
                           <Grid item>
@@ -381,12 +485,12 @@ const Home = () => {
                           <Grid item>
                             <Tooltip title="Λήξη">
                               <Button
-                                color="success"
+                                color="info"
                                 sx={{
                                   transition: 'transform 0.s, background-color 0.6s, color 0.6s',
                                   '&:hover': {
                                     transform: 'scale(1.1)', // Slightly scales the button on hover
-                                    backgroundColor: '#e1f5ea', // Change to a custom color during hover
+                                    backgroundColor: '#D6EAF8', // Change to a custom color during hover
                                   },
                                 }}
                                 onClick={() => handleFinishConfirm(instance.id)}
@@ -441,29 +545,101 @@ const Home = () => {
 
 
       {/* Password Dialog */}
-      <Dialog open={openDialog} onClose={handleDialogClose}>
-        <DialogTitle>Εισαγωγή Κωδικού</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Κωδικός "
-            type="password"
-            fullWidth
-            variant="outlined"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDialogClose} color="primary">
-            Ακυρο
-          </Button>
-          <Button onClick={handlePasswordSubmit} color="primary">
-            Υποβολή
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <Dialog
+  open={openDialog}
+  onClose={handleDialogClose}
+  sx={{
+    '& .MuiDialog-paper': {
+      borderRadius: '16px', // Rounded corners
+      padding: '16px', // Add padding around the dialog
+      boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.2)', // Enhanced shadow for depth
+      backgroundColor: '#f9f9f9', // Light gray background
+    },
+  }}
+>
+  <DialogTitle 
+    sx={{
+      fontWeight: 'bold',
+      textAlign: 'center',
+      fontSize: '1.5rem',
+      color: '#333', // Dark gray for text
+    }}
+  >
+    Εισαγωγή Κωδικού
+  </DialogTitle>
+
+  <DialogContent 
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '16px', // Spacing between elements
+      padding: '16px 24px',
+    }}
+  >
+    <TextField
+      autoFocus
+      margin="dense"
+      label="Κωδικός"
+      type="password"
+      fullWidth
+      variant="outlined"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      sx={{
+        '& .MuiOutlinedInput-root': {
+          borderRadius: '8px', // Round input corners
+        },
+        '& label.Mui-focused': {
+          color: '#007bff', // Light blue focus color
+        },
+        '& .MuiOutlinedInput-root.Mui-focused fieldset': {
+          borderColor: '#007bff', // Light blue border on focus
+        },
+      }}
+    />
+  </DialogContent>
+
+  <DialogActions 
+    sx={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      padding: '8px 24px',
+      gap: '8px', // Space between buttons
+    }}
+  >
+    <Button
+      onClick={handleDialogClose}
+      sx={{
+        color: '#fff',
+        backgroundColor: '#888',
+        borderRadius: '8px',
+        padding: '8px 16px',
+        textTransform: 'none',
+        '&:hover': {
+          backgroundColor: '#666',
+        },
+      }}
+    >
+      Ακυρο
+    </Button>
+    <Button
+      onClick={handlePasswordSubmit}
+      sx={{
+        color: '#fff',
+        backgroundColor: '#007bff',
+        borderRadius: '8px',
+        padding: '8px 16px',
+        textTransform: 'none',
+        '&:hover': {
+          backgroundColor: '#0056b3',
+        },
+      }}
+    >
+      Υποβολή
+    </Button>
+  </DialogActions>
+</Dialog>
+
     </div>
   );
 };
