@@ -188,7 +188,7 @@ const TrafficAnalytics = () => {
         xaxis: { categories: ['ΔΕΥ', 'ΤΡΙ', 'ΤΕΤ', 'ΠΕΜ', 'ΠΑΡ', 'ΣΑΒ', 'ΚΥΡ'] },
         yaxis: { title: { text: 'Σύνολο ' } },
         fill: { opacity: 1 },
-        tooltip: { y: { formatter: (val) => `${val} games` } },
+        tooltip: { y: { formatter: (val) => `${val} παιχνίδια` } },
         colors: Object.values(categoryColors),
     };
 

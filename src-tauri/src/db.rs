@@ -24,8 +24,9 @@ impl Database {
     // Update new() to return Result<Self, sqlx::Error>
     pub async fn new() -> Result<Self, sqlx::Error> {
         dotenv().ok();
-        let database_url = String::from("sqlite:C:/Users/thkos/AppData/Roaming/TMS/games.db"); // it will create a file in the root of our folder, my database is names 'sqlite.db'
-        // let database_url = String::from("./games.db"); // Path to your database file
+        // let database_url = String::from("sqlite:C:/Users/thkos/AppData/Roaming/TMS/games.db"); // it will create a file in the root of our folder, my database is names 'sqlite.db'
+
+        let database_url = String::from("./games.db"); // Path to your database file
 
         // let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env");
 
@@ -134,7 +135,7 @@ impl Database {
             FROM games g1
             WHERE total_cost > 0
             AND elapsed_time > 0
-            AND date(start_time) >= date('now', 'weekday 0', '-7 days')
+            AND date(start_time) >= date('now', 'weekday 1', '-7 days')
             AND date(start_time) <= date('now', 'weekday 0')
             AND (?1 IS NULL OR category_name = ?1)
             AND (?2 IS NULL OR instance_name = ?2)

@@ -280,21 +280,21 @@ const PriceAnalytics = () => {
                     )}
 
 
-<Typography
-    variant="h4"
-    sx={{
-        marginBottom: '1rem', // Space below the text
-        textAlign: 'center', // Center the text
-        fontWeight: 'bold', // Make the text bold
-        color: '#281c24', // Use a dark color for better contrast
-        backgroundColor: '#f9f9f9', // Subtle background to highlight
-        padding: '10px 20px', // Add padding around the text
-        borderRadius: '8px', // Smooth rounded corners
-        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)', // Light shadow for depth
-    }}
->
-    Συνολικά Κέρδη: €{totalEarnings.toFixed(2)}
-</Typography>
+                    <Typography
+                        variant="h4"
+                        sx={{
+                            marginBottom: '1rem', // Space below the text
+                            textAlign: 'center', // Center the text
+                            fontWeight: 'bold', // Make the text bold
+                            color: '#281c24', // Use a dark color for better contrast
+                            backgroundColor: '#f9f9f9', // Subtle background to highlight
+                            padding: '10px 20px', // Add padding around the text
+                            borderRadius: '8px', // Smooth rounded corners
+                            boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)', // Light shadow for depth
+                        }}
+                    >
+                        Συνολικά Κέρδη: €{totalEarnings.toFixed(2)}
+                    </Typography>
 
                     <Box
                         sx={{
