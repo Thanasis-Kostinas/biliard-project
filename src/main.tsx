@@ -5,6 +5,47 @@ import ReactDOM from "react-dom";
 import App from "./App";
 
 const lightTheme = createTheme({
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          display: 'flex', // Use flexbox for centering content
+          alignItems: 'center', // Vertically center content
+          justifyContent: 'center', // Horizontally center content
+          textAlign: 'center',          minWidth: '28px', // Smaller buttons for mobile
+          height: '28px',
+          fontSize: '0.7rem',
+          '@media (max-width:600px)': {
+            minWidth: '30px', // Even smaller on very small screens
+            height: '30px',
+            fontSize: 'rem',
+          },
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          padding: '2px 6px', // Reduce padding for mobile
+          fontSize: '0.75rem',
+          '@media (max-width:600px)': {
+            padding: '1px 4px', // Tight padding on very small screens
+            fontSize: '0.7rem',
+          },
+        },
+      },
+    },
+    MuiGrid: {
+      styleOverrides: {
+        item: {
+          padding: '7px', // Compact spacing for Grid items
+          '@media (max-width:600px)': {
+            padding: '7px', // Reduce further for smaller screens
+          },
+        },
+      },
+    },
+  },
   palette: {
     mode: "light",
     primary: {
@@ -23,9 +64,11 @@ const lightTheme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif', // Use a common font
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontSize: 12, // Set a smaller base font size
   },
 });
+
 
 ReactDOM.render(
   <ThemeProvider theme={lightTheme}>

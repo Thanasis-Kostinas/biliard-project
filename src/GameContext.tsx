@@ -88,7 +88,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         game => !(game.category_name === category && game.instance_name === instanceName)
       ));
       
-      alert("Το παιχνίδι διαγράφηκε με επιτυχία!");
     } catch (error) {
       console.error('Error deleting game:', error);
       alert("Failed to delete game: " + error);
@@ -128,7 +127,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const currentElapsedTime = instance.elapsed_time !== null ? instance.elapsed_time : 0; // Default to 0 if null
     let finalElapsedTime = currentElapsedTime; // Default to the existing value
     if (finalElapsedTime < 3600) { // Assuming elapsed_time is in minutes
-        finalElapsedTime = instance.price_per_hour / 2; // Set to price_per_hour/2 if less than 1 hour
+        finalElapsedTime = instance.price_per_hour; // Set to price_per_hour/2 if less than 1 hour
       }else{
       finalElapsedTime = roundUpToNearestHalf(instance.total_cost); 
     }
@@ -192,7 +191,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         endTime: newInstance.end_time,
       });
   
-      alert("Game saved successfully!");
   
       // Update local state after saving the game to the database
       setGameInstances((prev: GameInstance[]) => [...prev, newInstance]);

@@ -363,7 +363,6 @@ const Home = () => {
                       fontWeight: 'bold',
                       color: '#FFFEFF', // Light text color
                       textAlign: 'center',
-                      padding: '8px',
                       boxShadow: 'none', // Remove inner shadow for seamless look
                       textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
                       border: 'none', // Remove borders
@@ -374,7 +373,6 @@ const Home = () => {
                       fontWeight: 'bold',
                       color: '#FFFEFF',
                       textAlign: 'center',
-                      padding: '8px',
                       boxShadow: 'none', // Remove inner shadow for seamless look
                       textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
                       border: 'none', // Remove borders
@@ -385,7 +383,6 @@ const Home = () => {
                       fontWeight: 'bold',
                       color: '#FFFEFF',
                       textAlign: 'center',
-                      padding: '8px',
                       boxShadow: 'none', // Remove inner shadow for seamless look
                       textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
                       border: 'none', // Remove borders
@@ -396,7 +393,6 @@ const Home = () => {
                       fontWeight: 'bold',
                       color: '#FFFEFF',
                       textAlign: 'center',
-                      padding: '8px',
                       boxShadow: 'none', // Remove inner shadow for seamless look
                       textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
                       border: 'none', // Remove borders
@@ -407,7 +403,6 @@ const Home = () => {
                       fontWeight: 'bold',
                       color: '#FFFEFF',
                       textAlign: 'center',
-                      padding: '8px',
                       boxShadow: 'none', // Remove inner shadow for seamless look
                       textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
                       border: 'none', // Remove borders
@@ -418,7 +413,6 @@ const Home = () => {
                       fontWeight: 'bold',
                       color: '#FFFEFF',
                       textAlign: 'center',
-                      padding: '8px',
                       boxShadow: 'none', // Remove inner shadow for seamless look
                       textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
                       border: 'none', // Remove borders
