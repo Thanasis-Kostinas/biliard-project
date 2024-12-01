@@ -127,7 +127,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const currentElapsedTime = instance.elapsed_time !== null ? instance.elapsed_time : 0; // Default to 0 if null
     let finalElapsedTime = currentElapsedTime; // Default to the existing value
     if (finalElapsedTime < 3600) { // Assuming elapsed_time is in minutes
-        finalElapsedTime = instance.price_per_hour; // Set to price_per_hour/2 if less than 1 hour
+        finalElapsedTime = instance.total_cost; // Set to price_per_hour/2 if less than 1 hour
       }else{
       finalElapsedTime = roundUpToNearestHalf(instance.total_cost); 
     }
