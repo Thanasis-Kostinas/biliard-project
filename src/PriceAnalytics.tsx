@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import { invoke } from '@tauri-apps/api/tauri';
 import { SelectChangeEvent } from "@mui/material";
-import { Bar } from 'react-chartjs-2'; // Import Bar instead of Line
+import { Bar, Radar } from 'react-chartjs-2';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
     Chart as ChartJS,
@@ -33,11 +33,26 @@ import {
     BarElement,
     Title,
     Tooltip,
-    Legend
+    Legend,
+    RadialLinearScale,
+    PointElement,
+    LineElement,
+    Filler
 } from 'chart.js';
 import './PriceAnalytics.css';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    RadialLinearScale,
+    PointElement,
+    LineElement,
+    Filler
+);
 
 interface GameData {
     id: number;
@@ -62,6 +77,8 @@ const PriceAnalytics = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [weeklyData, setWeeklyData] = useState<GameData[]>([]);
+    const [monthlyData, setMonthlyData] = useState<GameData[]>([]);
 
     useEffect(() => {
         const fetchCategoriesAndInstances = async () => {
@@ -84,21 +101,31 @@ const PriceAnalytics = () => {
     useEffect(() => {
         const fetchData = async () => {
             let fetchedData: GameData[] = [];
+            let weeklyFetchedData: GameData[] = [];
+            let monthlyFetchedData: GameData[] = [];
 
             try {
                 switch (interval) {
                     case 'Daily':
                         fetchedData = (await invoke("fetch_daily_data")) as GameData[] || [];
+                        weeklyFetchedData = (await invoke("fetch_weekly_data")) as GameData[] || [];
+                        monthlyFetchedData = (await invoke("fetch_monthly_data")) as GameData[] || [];
                         break;
                     case 'Weekly':
                         fetchedData = (await invoke("fetch_weekly_data")) as GameData[] || [];
+                        weeklyFetchedData = (await invoke("fetch_weekly_data")) as GameData[] || [];
+                        monthlyFetchedData = (await invoke("fetch_monthly_data")) as GameData[] || [];
                         break;
                     case 'Monthly':
                         fetchedData = (await invoke("fetch_monthly_data")) as GameData[] || [];
+                        weeklyFetchedData = (await invoke("fetch_weekly_data")) as GameData[] || [];
+                        monthlyFetchedData = (await invoke("fetch_monthly_data")) as GameData[] || [];
                         break;
                     case 'Custom':
                         if (startDate && endDate) {
                             fetchedData = (await invoke("fetch_custom_data", { startDate, endDate })) as GameData[] || [];
+                            weeklyFetchedData = (await invoke("fetch_weekly_data")) as GameData[] || [];
+                            monthlyFetchedData = (await invoke("fetch_monthly_data")) as GameData[] || [];
                         }
                         break;
                     default:
@@ -110,7 +137,19 @@ const PriceAnalytics = () => {
                         (instance === 'All' || item.instance_name === instance);
                 });
 
+                let weeklyData = weeklyFetchedData.filter(item => {
+                    return (category === 'All' || item.category_name === category) &&
+                        (instance === 'All' || item.instance_name === instance);
+                });
+
+                let monthlyData = monthlyFetchedData.filter(item => {
+                    return (category === 'All' || item.category_name === category) &&
+                        (instance === 'All' || item.instance_name === instance);
+                });
+
                 setFilteredData(data);
+                setWeeklyData(weeklyData);
+                setMonthlyData(monthlyData);
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -177,9 +216,137 @@ const PriceAnalytics = () => {
         responsive: true,
         scales: {
             y: {
+                type: 'linear' as const,
                 beginAtZero: true,
             },
         },
+    };
+
+    // New chart data for additional analysis
+    const categoryChartData = {
+        labels: categories,
+        datasets: [
+            {
+                label: 'Κέρδη ανά Κατηγορία',
+                data: categories.map(cat => 
+                    filteredData
+                        .filter(item => item.category_name === cat)
+                        .reduce((acc, item) => acc + item.total_cost, 0)
+                ),
+                backgroundColor: 'rgba(153,102,255,0.5)',
+                borderColor: 'rgba(153,102,255,1)',
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    const gamePlayPatternsData = {
+        labels: categories,
+        datasets: [
+            {
+                label: 'Ώρες Παιχνιδιού ανά Κατηγορία',
+                data: categories.map(cat => {
+                    const totalSeconds = filteredData
+                        .filter(item => item.category_name === cat)
+                        .reduce((acc, item) => acc + (item.elapsed_time || 0), 0);
+                    return Math.round(totalSeconds / 3600); // Convert seconds to hours
+                }),
+                backgroundColor: 'rgba(255,159,64,0.2)',
+                borderColor: 'rgba(255,159,64,1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(255,159,64,1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(255,159,64,1)',
+            },
+        ],
+    };
+
+    const gamePlayPatternsOptions = {
+        responsive: true,
+        scales: {
+            r: {
+                type: 'radialLinear' as const,
+                beginAtZero: true,
+                ticks: {
+                    display: false
+                },
+                pointLabels: {
+                    font: {
+                        size: 12,
+                        weight: 'bold' as const
+                    },
+                    padding: 20
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top' as const,
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context: any) {
+                        return `${context.raw} ώρες`;
+                    }
+                }
+            }
+        }
+    };
+
+    const timeDistributionChartData = {
+        labels: filteredData.map(item => item.instance_name),
+        datasets: [
+            {
+                label: 'Ώρες Παιχνιδιού',
+                data: filteredData.map(item => {
+                    const hours = item.elapsed_time ? Math.round(item.elapsed_time / 3600) : 0;
+                    return hours;
+                }),
+                backgroundColor: 'rgba(255,99,132,0.5)',
+                borderColor: 'rgba(255,99,132,1)',
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    const timeDistributionOptions = {
+        responsive: true,
+        scales: {
+            y: {
+                type: 'linear' as const,
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Ώρες'
+                },
+                ticks: {
+                    stepSize: 1,
+                    callback: function(this: any, tickValue: number | string) {
+                        return `${tickValue} ώρες`;
+                    }
+                }
+            },
+            x: {
+                type: 'category' as const,
+                ticks: {
+                    maxRotation: 45,
+                    minRotation: 45
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top' as const,
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context: any) {
+                        return `${context.raw} ώρες`;
+                    }
+                }
+            }
+        }
     };
 
     if (loading) {
@@ -196,14 +363,12 @@ const PriceAnalytics = () => {
             <Card
                 sx={{
                     padding: '2rem',
-                    borderRadius: '16px', // Slightly more rounded corners
-                    boxShadow: '0px 12px 24px rgba(0, 0, 0, 0.1)', // Stronger 3D shadow for more depth
-                    background: 'linear-gradient(145deg, #ffffff, #f1f1f1)', // Light gradient for background
-
+                    borderRadius: '16px',
+                    boxShadow: '0px 12px 24px rgba(0, 0, 0, 0.1)',
+                    background: 'linear-gradient(145deg, #ffffff, #f1f1f1)',
                 }}
             >
                 <CardContent>
-
                     <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom="1rem">
                         <FormControl variant="outlined" sx={{ minWidth: 120 }}>
                             <InputLabel>Κατηγορία</InputLabel>
@@ -279,148 +444,260 @@ const PriceAnalytics = () => {
                         </Box>
                     )}
 
-
-                    <Typography
-                        variant="h4"
-                        sx={{
-                            marginBottom: '1rem', // Space below the text
-                            textAlign: 'center', // Center the text
-                            fontWeight: 'bold', // Make the text bold
-                            color: '#281c24', // Use a dark color for better contrast
-                            backgroundColor: '#f9f9f9', // Subtle background to highlight
-                            padding: '10px 20px', // Add padding around the text
-                            borderRadius: '8px', // Smooth rounded corners
-                            boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)', // Light shadow for depth
-                        }}
-                    >
-                        Συνολικά Κέρδη: €{totalEarnings.toFixed(2)}
-                    </Typography>
-
-                    <Box
-                        sx={{
-                            padding: '16px', // Add some padding around the chart
-                            margin: '0 auto', // Center the box horizontally
-                            borderRadius: '8px', // Rounded corners
-                            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', // Light shadow for 3D effect
-                            backgroundColor: '#fff', // White background for contrast
-                            display: 'flex', // To maintain the flex layout if you have multiple components inside
-                            justifyContent: 'center', // Centers the chart horizontally inside the box
-                        }}
-                    >
-                        <Bar data={chartData} options={chartOptions} /> {/* Bar chart here */}
-                    </Box>
-                    <Table sx={{ boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.05)', borderRadius: '8px' }}>
-                        <TableHead>
-                            <TableRow sx={{
-                                backgroundColor: '#f9f9f9', // Light background for row
+                    <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        gap: '2rem',
+                        marginBottom: '2rem'
+                    }}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                padding: '1rem 2rem',
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                                boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.1)',
+                                transition: 'all 0.3s ease',
                                 '&:hover': {
-                                    backgroundColor: '#f1f1f1', // Slight darkening on hover
-                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', // Hover shadow
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: '0px 6px 20px rgba(0, 0, 0, 0.12)',
+                                }
+                            }}
+                        >
+                            <Typography
+                                variant="h5"
+                                sx={{
+                                    fontWeight: 'bold',
+                                    color: '#281c24',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                }}
+                            >
+                                Συνολικά Κέρδη: €{totalEarnings.toFixed(2)}
+                            </Typography>
+                        </Box>
+
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} md={6}>
+                                <Box
+                                    sx={{
+                                        padding: '24px',
+                                        borderRadius: '16px',
+                                        boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.1)',
+                                        backgroundColor: '#fff',
+                                        height: '300px',
+                                    }}
+                                >
+                                    <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+                                        Κέρδη ανά Χρονική Περίοδο
+                                    </Typography>
+                                    <Bar data={chartData} options={chartOptions} />
+                                </Box>
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <Box
+                                    sx={{
+                                        padding: '24px',
+                                        borderRadius: '16px',
+                                        boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.1)',
+                                        backgroundColor: '#fff',
+                                        height: '300px',
+                                    }}
+                                >
+                                    <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+                                        Κέρδη ανά Κατηγορία
+                                    </Typography>
+                                    <Bar data={categoryChartData} options={chartOptions} />
+                                </Box>
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <Box
+                                    sx={{
+                                        padding: '24px',
+                                        borderRadius: '16px',
+                                        boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.1)',
+                                        backgroundColor: '#fff',
+                                        height: '300px',
+                                    }}
+                                >
+                                    <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+                                        Κατανομή Χρόνου Παιχνιδιού ανά Κατηγορία
+                                    </Typography>
+                                    <Radar data={gamePlayPatternsData} options={gamePlayPatternsOptions} />
+                                </Box>
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <Box
+                                    sx={{
+                                        padding: '24px',
+                                        borderRadius: '16px',
+                                        boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.1)',
+                                        backgroundColor: '#fff',
+                                        height: '300px',
+                                    }}
+                                >
+                                    <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+                                        Χρόνος Παιχνιδιού ανά Παιχνίδι
+                                    </Typography>
+                                    <Bar data={timeDistributionChartData} options={timeDistributionOptions} />
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    </Box>
+
+                    <Accordion 
+                        sx={{ 
+                            marginTop: '2rem',
+                            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.1)',
+                            borderRadius: '16px',
+                            '&:before': {
+                                display: 'none',
+                            },
+                        }}
+                    >
+                        <AccordionSummary
+                            expandIcon={<ExpandMoreIcon />}
+                            sx={{
+                                backgroundColor: '#f9f9f9',
+                                borderRadius: '16px 16px 0 0',
+                                padding: '1rem 1.5rem',
+                                '&:hover': {
+                                    backgroundColor: '#f1f1f1',
                                 },
-                                borderRadius: '8px', // Rounded corners for row
+                            }}
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Λεπτομέρειες Παιχνιδιών</Typography>
+                                <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                        backgroundColor: '#e0e0e0',
+                                        padding: '0.25rem 0.75rem',
+                                        borderRadius: '12px',
+                                        color: '#666'
+                                    }}
+                                >
+                                    {filteredData.length} εγγραφές
+                                </Typography>
+                            </Box>
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ padding: '1.5rem' }}>
+                            <Box sx={{ 
+                                overflowX: 'auto',
+                                '&::-webkit-scrollbar': {
+                                    height: '8px',
+                                },
+                                '&::-webkit-scrollbar-track': {
+                                    backgroundColor: '#f1f1f1',
+                                    borderRadius: '4px',
+                                },
+                                '&::-webkit-scrollbar-thumb': {
+                                    backgroundColor: '#888',
+                                    borderRadius: '4px',
+                                    '&:hover': {
+                                        backgroundColor: '#666',
+                                    },
+                                },
                             }}>
-                                <TableCell
-                                    sx={{
-                                        fontWeight: 'bold', // Bold text for header cells
-                                        fontSize: '1rem', // Adjust size for clarity
-                                        color: '#333', // Dark text color
-                                        padding: '12px 16px', // Add padding for better readability
-                                        borderBottom: '1px solid #e0e0e0', // Subtle bottom border for separation
+                                <Table 
+                                    sx={{ 
+                                        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.05)', 
+                                        borderRadius: '12px',
+                                        minWidth: 800,
+                                        '& .MuiTableCell-root': {
+                                            padding: '1rem',
+                                            fontSize: '0.95rem',
+                                        }
                                     }}
                                 >
-                                    Κατηγορία
-                                </TableCell>
-                                <TableCell
-                                    sx={{
-                                        fontWeight: 'bold',
-                                        fontSize: '1rem',
-                                        color: '#333',
-                                        padding: '12px 16px',
-                                        borderBottom: '1px solid #e0e0e0',
-                                    }}
-                                >
-                                    Όνομα
-                                </TableCell>
-                                <TableCell
-                                    sx={{
-                                        fontWeight: 'bold',
-                                        fontSize: '1rem',
-                                        color: '#333',
-                                        padding: '12px 16px',
-                                        borderBottom: '1px solid #e0e0e0',
-                                    }}
-                                >
-                                    Τιμή ανά Ώρα
-                                </TableCell>
-                                <TableCell
-                                    sx={{
-                                        fontWeight: 'bold',
-                                        fontSize: '1rem',
-                                        color: '#333',
-                                        padding: '12px 16px',
-                                        borderBottom: '1px solid #e0e0e0',
-                                    }}
-                                >
-                                    Χρόνος Παιχνιδιού
-                                </TableCell>
-                                <TableCell
-                                    sx={{
-                                        fontWeight: 'bold',
-                                        fontSize: '1rem',
-                                        color: '#333',
-                                        padding: '12px 16px',
-                                        borderBottom: '1px solid #e0e0e0',
-                                    }}
-                                >
-                                    Κέρδος
-                                </TableCell>
-                                <TableCell
-                                    sx={{
-                                        fontWeight: 'bold',
-                                        fontSize: '1rem',
-                                        color: '#333',
-                                        padding: '12px 16px',
-                                        borderBottom: '1px solid #e0e0e0',
-                                    }}
-                                >
-                                    Ενέργειες
-                                </TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {filteredData.map((game) => (
-                                <TableRow key={game.id}>
-                                    <TableCell>{game.category_name}</TableCell>
-                                    <TableCell>{game.instance_name}</TableCell>
-                                    <TableCell>€{game.price_per_hour.toFixed(2)}</TableCell>
-                                    <TableCell>
-                                        {game.elapsed_time
-                                            ? game.elapsed_time >= 3600
-                                                ? `${Math.floor(game.elapsed_time / 3600)} ώρες και ${Math.floor((game.elapsed_time % 3600) / 60)} λεπτά`
-                                                : `${Math.floor(game.elapsed_time / 60)} λεπτά`
-                                            : 'N/A'}
-                                    </TableCell>
-                                    <TableCell>€{game.total_cost.toFixed(2)}</TableCell>
-                                    <TableCell>
-                                        <Button
-                                            variant="contained"
-                                            color="secondary"
-                                            onClick={() => handleDeleteGame(game.id)}
-                                            sx={{
-                                                transition: 'all 0.3s ease',
-                                                '&:hover': {
-                                                    transform: 'scale(1.05)', // Slight scale effect on hover
-                                                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.15)', // Subtle shadow on hover
-                                                },
-                                            }}
-                                        >
-                                            διαγραφη
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                    <TableHead>
+                                        <TableRow sx={{
+                                            backgroundColor: '#f9f9f9',
+                                            '&:hover': {
+                                                backgroundColor: '#f1f1f1',
+                                            },
+                                            '& .MuiTableCell-root': {
+                                                fontWeight: 'bold',
+                                                fontSize: '1rem',
+                                                color: '#333',
+                                                borderBottom: '2px solid #e0e0e0',
+                                                whiteSpace: 'nowrap',
+                                            }
+                                        }}>
+                                            <TableCell>Κατηγορία</TableCell>
+                                            <TableCell>Όνομα</TableCell>
+                                            <TableCell align="right">Τιμή ανά Ώρα</TableCell>
+                                            <TableCell align="right">Χρόνος Παιχνιδιού</TableCell>
+                                            <TableCell align="right">Κέρδος</TableCell>
+                                            <TableCell align="center">Ενέργειες</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {filteredData.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                                                    <Typography color="text.secondary">
+                                                        Δεν βρέθηκαν εγγραφές
+                                                    </Typography>
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            filteredData.map((game) => (
+                                                <TableRow 
+                                                    key={game.id}
+                                                    sx={{
+                                                        '&:hover': {
+                                                            backgroundColor: '#f9f9f9',
+                                                        },
+                                                        transition: 'all 0.2s ease',
+                                                        '&:last-child td': {
+                                                            borderBottom: 0,
+                                                        },
+                                                    }}
+                                                >
+                                                    <TableCell>{game.category_name}</TableCell>
+                                                    <TableCell>{game.instance_name}</TableCell>
+                                                    <TableCell align="right">€{game.price_per_hour.toFixed(2)}</TableCell>
+                                                    <TableCell align="right">
+                                                        {game.elapsed_time
+                                                            ? game.elapsed_time >= 3600
+                                                                ? `${Math.floor(game.elapsed_time / 3600)} ώρες και ${Math.floor((game.elapsed_time % 3600) / 60)} λεπτά`
+                                                                : `${Math.floor(game.elapsed_time / 60)} λεπτά`
+                                                            : 'N/A'}
+                                                    </TableCell>
+                                                    <TableCell align="right">€{game.total_cost.toFixed(2)}</TableCell>
+                                                    <TableCell align="center">
+                                                        <Button
+                                                            variant="contained"
+                                                            color="secondary"
+                                                            onClick={() => handleDeleteGame(game.id)}
+                                                            sx={{
+                                                                transition: 'all 0.3s ease',
+                                                                textTransform: 'none',
+                                                                borderRadius: '8px',
+                                                                padding: '0.5rem 1rem',
+                                                                minWidth: '100px',
+                                                                '&:hover': {
+                                                                    transform: 'scale(1.05)',
+                                                                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.15)',
+                                                                },
+                                                            }}
+                                                        >
+                                                            διαγραφη
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </Box>
+                        </AccordionDetails>
+                    </Accordion>
 
                     <Snackbar
                         open={snackbarOpen}

@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGameContext } from "./GameContext";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Import the icon
+import { invoke } from "@tauri-apps/api/tauri";
+
 
 import {
   Container,
@@ -15,11 +17,9 @@ import {
 
 // Enum for predefined categories
 const GameCategories = {
-  BILLIARDS: "Μπιλιάρδο ",
-  POOL: "Γαλλικό Μπιλιάρδο",
-  PING_PONG: "Ping Pong",
-  DARTS: "Βελάκια",
-  CUSTOM: "Προσαρμογή", // New Custom option
+  CUSTOM: "Προσαρμογή", // Custom option,
+  BILLIARDS: "Μπιλιάρδο",
+  PING_PONG: "Ping Pong"
 };
 
 const CreateCategory = () => {
@@ -31,6 +31,41 @@ const CreateCategory = () => {
   const navigate = useNavigate();
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [message, setMessage] = useState("");
+  const [categories, setCategories] = useState<string[]>([]); // State to store distinct categories
+  
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const fetchedCategories = await invoke<string[]>("get_distinct_categories");
+        // Combine static and fetched categories, removing duplicates
+        const combinedCategories = [
+          ...new Set([...Object.values(GameCategories), ...fetchedCategories]),
+        ];
+        setCategories(combinedCategories);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+  
+    fetchCategories();
+  }, []);
+
+  const validateGameExists = async (category: string, instance: string) => {
+    try {
+      const combinations = await invoke<{ category_name: string; instance_name: string }[]>(
+        "get_category_instance_combinations"
+      );
+      const exists = combinations.some(
+        (combo) => combo.category_name === category && combo.instance_name === instance
+      );
+      return exists;
+    } catch (error) {
+      console.error("Failed to validate game existence:", error);
+      return false;
+    }
+  };
+
 
   const showSnackbar = (msg: string) => {
     setMessage(msg);
@@ -54,6 +89,13 @@ const CreateCategory = () => {
       alert("Παρακαλώ εισάγετε μια έγκυρη κατηγορία.");
       return;
     }
+
+  // Validate if the game already exists
+  const gameExists = await validateGameExists(selectedCategory, instanceName);
+  if (gameExists) {
+    showSnackbar("Το παιχνίδι υπάρχει ήδη. Παρακαλώ επιλέξτε διαφορετική κατηγορία ή όνομα.");
+    return;
+  }
 
     try {
       // Call the addGame function to save to the database
@@ -89,35 +131,44 @@ const CreateCategory = () => {
         <form onSubmit={handleSubmit}>
           {/* Category Selection */}
           <Box mb={3}>
-            <TextField
-              select
-              label="Κατηγορία"
-              fullWidth
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              required
-              SelectProps={{
-                native: true,
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '8px',
-                  boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-                  '&:hover fieldset': {
-                    borderColor: '#007bff',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#0056b3',
-                  },
-                },
-              }}
-            >
-              {Object.entries(GameCategories).map(([key, value]) => (
-                <option key={key} value={value}>
-                  {value}
-                </option>
-              ))}
-            </TextField>
+          <TextField
+  select
+  label="Κατηγορία"
+  fullWidth
+  value={category}
+  onChange={(e) => setCategory(e.target.value)}
+  required
+  SelectProps={{
+    native: true,
+  }}
+  sx={{
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '8px',
+      boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+      '&:hover fieldset': {
+        borderColor: '#007bff',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#0056b3',
+      },
+    },
+  }}
+>
+  {/* Render static categories */}
+  {Object.entries(GameCategories).map(([key, value]) => (
+    <option key={key} value={value}>
+      {value}
+    </option>
+  ))}
+  {/* Render fetched categories */}
+  {categories
+    .filter((cat) => !Object.values(GameCategories).includes(cat)) // Exclude static categories
+    .map((cat) => (
+      <option key={cat} value={cat}>
+        {cat}
+      </option>
+    ))}
+</TextField>
           </Box>
 
           {category === GameCategories.CUSTOM && (

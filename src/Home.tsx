@@ -1,10 +1,10 @@
-import BarChartIcon from "@mui/icons-material/BarChart";
-import CategoryIcon from "@mui/icons-material/Category";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import MenuIcon from "@mui/icons-material/Menu";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import SettingsIcon from "@mui/icons-material/Settings";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { invoke } from "@tauri-apps/api/tauri";
+import { GameInstance, useGameContext } from "./GameContext";
+import './Home.css';
+
+// Import Material UI components
 import {
   Alert,
   Button,
@@ -29,16 +29,27 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   TextField,
   Toolbar,
   Tooltip,
   Typography
 } from "@mui/material";
-import { invoke } from "@tauri-apps/api/tauri";
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { GameInstance, useGameContext } from "./GameContext";
-import './Home.css'; // Adjust the path if your CSS file is in a different folder
+
+// Import Material UI icons
+import MenuIcon from "@mui/icons-material/Menu";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import CategoryIcon from "@mui/icons-material/Category";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import SettingsIcon from "@mui/icons-material/Settings";
+
+// Define type for sort direction
+type Order = 'asc' | 'desc';
+
+// Define type for sortable columns
+type SortableColumn = 'category_name' | 'instance_name' | 'start_time' | 'elapsed_time' | 'total_cost';
 
 const Home = () => {
   const {
@@ -62,17 +73,71 @@ const Home = () => {
   const [redirectToAnalytics, setRedirectToAnalytics] = useState(false);
   const [redirectToProperties, setRedirectToProperties] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [customSortOrder, setCustomSortOrder] = useState<Record<string, number>>({});
+  const [openCustomSortPopup, setOpenCustomSortPopup] = useState(false);
+  const categories: string[] = [...new Set(gameInstances.map((instance) => instance.category_name))];
 
-  // Prevents UI from right clicked so user cant press right  click back and go back to analytics
-  //   useEffect(() => {
-  //     const handleContextmenu = (e: MouseEvent) => {
-  //         e.preventDefault();
-  //     };
-  //     document.addEventListener('contextmenu', handleContextmenu);
-  //     return function cleanup() {
-  //         document.removeEventListener('contextmenu', handleContextmenu);
-  //     };
-  // }, []);
+
+  // Sorting state
+  const [order, setOrder] = useState<Order>('asc');
+  const [orderBy, setOrderBy] = useState<SortableColumn>('category_name');
+  const [sortedInstances, setSortedInstances] = useState<GameInstance[]>([]);
+  const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
+
+  useEffect(() => {
+    const sortedData = [...gameInstances].sort((a, b) => {
+      // Custom sort logic
+      const orderA = customSortOrder[a.category_name] || Infinity;
+      const orderB = customSortOrder[b.category_name] || Infinity;
+
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+
+      // Default sorting for items within the same category
+      let comparison = 0;
+      switch (orderBy) {
+        case 'category_name':
+          comparison = (a.category_name || '').localeCompare(b.category_name || '');
+          break;
+        case 'instance_name':
+          comparison = (a.instance_name || '').localeCompare(b.instance_name || '');
+          break;
+        case 'start_time':
+          if (!a.start_time && !b.start_time) comparison = 0;
+          else if (!a.start_time) comparison = -1;
+          else if (!b.start_time) comparison = 1;
+          else comparison = new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+          break;
+        case 'elapsed_time':
+          if (a.elapsed_time === null && b.elapsed_time === null) comparison = 0;
+          else if (a.elapsed_time === null) comparison = -1;
+          else if (b.elapsed_time === null) comparison = 1;
+          else comparison = a.elapsed_time - b.elapsed_time;
+          break;
+        case 'total_cost':
+          comparison = a.total_cost - b.total_cost;
+          break;
+        default:
+          comparison = 0;
+      }
+
+      return order === 'asc' ? comparison : -comparison;
+    });
+
+    setSortedInstances(sortedData);
+  }, [gameInstances, order, orderBy, customSortOrder]);
+
+  const groupedData = sortedInstances.reduce((acc, instance) => {
+    const category = instance.category_name || 'Uncategorized';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(instance);
+    return acc;
+  }, {} as Record<string, GameInstance[]>);
+
+
 
   window.addEventListener("beforeunload", () => {
     // Clear localStorage and sessionStorage
@@ -86,6 +151,51 @@ const Home = () => {
 
   const calculateTotalCost = (elapsedTime: number, pricePerHour: number): number => {
     return (elapsedTime / 3600000) * pricePerHour;
+  };
+
+  const applyCustomSort = () => {
+    const sortedData = [...gameInstances].sort((a, b) => {
+      // Custom sort logic
+      const orderA = customSortOrder[a.category_name] || Infinity; // Default to Infinity for unsorted categories
+      const orderB = customSortOrder[b.category_name] || Infinity;
+
+      // Sort by custom order first
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+
+      // Default sorting for items within the same category
+      let comparison = 0;
+      switch (orderBy) {
+        case 'category_name':
+          comparison = (a.category_name || '').localeCompare(b.category_name || '');
+          break;
+        case 'instance_name':
+          comparison = (a.instance_name || '').localeCompare(b.instance_name || '');
+          break;
+        case 'start_time':
+          if (!a.start_time && !b.start_time) comparison = 0;
+          else if (!a.start_time) comparison = -1;
+          else if (!b.start_time) comparison = 1;
+          else comparison = new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+          break;
+        case 'elapsed_time':
+          if (a.elapsed_time === null && b.elapsed_time === null) comparison = 0;
+          else if (a.elapsed_time === null) comparison = -1;
+          else if (b.elapsed_time === null) comparison = 1;
+          else comparison = a.elapsed_time - b.elapsed_time;
+          break;
+        case 'total_cost':
+          comparison = a.total_cost - b.total_cost;
+          break;
+        default:
+          comparison = 0;
+      }
+
+      return order === 'asc' ? comparison : -comparison;
+    });
+
+    setSortedInstances(sortedData);
   };
 
   useEffect(() => {
@@ -127,6 +237,62 @@ const Home = () => {
     fetchGames();
   }, [setGameInstances]);
 
+  useEffect(() => {
+    const savedSortOrder = localStorage.getItem('customSortOrder');
+    if (savedSortOrder) {
+      setCustomSortOrder(JSON.parse(savedSortOrder));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('customSortOrder', JSON.stringify(customSortOrder));
+  }, [customSortOrder]);
+
+  // Update sorted instances whenever gameInstances or sorting changes
+  useEffect(() => {
+    const sortedData = [...gameInstances].sort((a, b) => {
+      let comparison = 0;
+
+      switch (orderBy) {
+        case 'category_name':
+          comparison = (a.category_name || '').localeCompare(b.category_name || '');
+          break;
+        case 'instance_name':
+          comparison = (a.instance_name || '').localeCompare(b.instance_name || '');
+          break;
+        case 'start_time':
+          // Handle null values for start_time
+          if (!a.start_time && !b.start_time) comparison = 0;
+          else if (!a.start_time) comparison = -1;
+          else if (!b.start_time) comparison = 1;
+          else comparison = new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+          break;
+        case 'elapsed_time':
+          // Handle null values for elapsed_time
+          if (a.elapsed_time === null && b.elapsed_time === null) comparison = 0;
+          else if (a.elapsed_time === null) comparison = -1;
+          else if (b.elapsed_time === null) comparison = 1;
+          else comparison = a.elapsed_time - b.elapsed_time;
+          break;
+        case 'total_cost':
+          comparison = a.total_cost - b.total_cost;
+          break;
+        default:
+          comparison = 0;
+      }
+
+      return order === 'asc' ? comparison : -comparison;
+    });
+
+    setSortedInstances(sortedData);
+  }, [gameInstances, order, orderBy]);
+
+  const handleRequestSort = (property: SortableColumn) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
   const showSnackbar = (msg: string) => {
     setMessage(msg);
     setOpenSnackbar(true);
@@ -139,7 +305,7 @@ const Home = () => {
   const handleNavigate = (path: string) => {
     navigate(path);
     setDrawerOpen(false);
-    handleCreateCategoryClick()
+    handleCreateCategoryClick();
   };
 
   // Menu handling
@@ -173,7 +339,7 @@ const Home = () => {
       }
       navigate(redirectToAnalytics ? "/analytics" : "/create-category");
     } else {
-      showSnackbar("Λάθος κωδικός πρόσβασης");;
+      showSnackbar("Λάθος κωδικός πρόσβασης");
     }
   };
 
@@ -181,7 +347,7 @@ const Home = () => {
     setAnchorEl(null);
     setOpenDialog(true);
     setRedirectToAnalytics(true);
-    setRedirectToProperties(false)
+    setRedirectToProperties(false);
   };
 
   const handlePropertiesClick = () => {
@@ -196,18 +362,6 @@ const Home = () => {
     const seconds = (elapsed % 60).toString().padStart(2, "0");
     return `${hours}:${minutes}:${seconds}`;
   };
-
-  //Enable for dialog Pop Up on save
-  // const handleFinishDialogOpen = (instanceId: number) => {
-  //   setSelectedInstanceId(instanceId);
-  //   setOpenFinishDialog(true);
-  // };
-  //Enable for dialog Pop Up on save
-
-  // const handleFinishDialogClose = () => {
-  //   setOpenFinishDialog(false);
-  //   setSelectedInstanceId(null);
-  // };
 
   const handleFinishConfirm = async (selectedInstanceId: number) => {
     if (selectedInstanceId === null) return;
@@ -233,7 +387,6 @@ const Home = () => {
 
     try {
       await finishGame(selectedInstanceId);
-      // resetGame(selectedInstanceId);
       showSnackbar("Αποθηκεύτηκε");
     } catch (error) {
       console.error("Error saving game:", error);
@@ -245,6 +398,10 @@ const Home = () => {
     setOpenSnackbar(false);
   };
 
+  // Create sort handler for table headers
+  const createSortHandler = (property: SortableColumn) => () => {
+    handleRequestSort(property);
+  };
 
   return (
     <div style={{ display: "flex" }}>
@@ -254,16 +411,45 @@ const Home = () => {
         anchor="left"
         open={drawerOpen}
         onClose={handleDrawerToggle}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: 280,
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            borderRight: 'none',
+          },
+        }}
       >
-        <div style={{ width: 250 }}>
-          <Toolbar>
-            <IconButton onClick={handleDrawerToggle} sx={{ margin: '5px' }}>
+        <div style={{ width: 280 }}>
+          <Toolbar sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.08)'
+          }}>
+            <Typography variant="h6" sx={{
+              fontWeight: 600,
+              fontSize: '1.25rem',
+              color: '#333'
+            }}>
+              Μενού
+            </Typography>
+            <IconButton
+              onClick={handleDrawerToggle}
+              sx={{
+                color: '#555',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  transform: 'rotate(90deg)',
+                  transition: 'transform 0.3s ease'
+                }
+              }}
+            >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6">Μενού</Typography>
           </Toolbar>
-          <Divider />
-          <List>
+
+          <List sx={{ padding: '8px' }}>
             <ListItem
               component="div"
               onClick={() => handleCreateCategoryClick()}
@@ -271,17 +457,26 @@ const Home = () => {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                transition: 'transform 0.2s ease, background-color 0.2s ease',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                margin: '4px 0',
+                transition: 'all 0.2s ease',
                 '&:hover': {
-                  transform: 'scale(1.05)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.06)',
+                  transform: 'translateX(4px)',
                 },
               }}
             >
-              <ListItemIcon>
+              <ListItemIcon sx={{ minWidth: '40px', color: '#1976d2' }}>
                 <CategoryIcon />
               </ListItemIcon>
-              <ListItemText primary="Δημιουργία νέας κατηγορίας" />
+              <ListItemText
+                primary="Δημιουργία νέo παιχνιδιου"
+                primaryTypographyProps={{
+                  fontWeight: 500,
+                  fontSize: '0.95rem'
+                }}
+              />
             </ListItem>
 
             <ListItem
@@ -291,17 +486,26 @@ const Home = () => {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                transition: 'transform 0.2s ease, background-color 0.2s ease',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                margin: '4px 0',
+                transition: 'all 0.2s ease',
                 '&:hover': {
-                  transform: 'scale(1.05)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.06)',
+                  transform: 'translateX(4px)',
                 },
               }}
             >
-              <ListItemIcon>
+              <ListItemIcon sx={{ minWidth: '40px', color: '#1976d2' }}>
                 <BarChartIcon />
               </ListItemIcon>
-              <ListItemText primary="Αναλυτικά" />
+              <ListItemText
+                primary="Αναλυτικά"
+                primaryTypographyProps={{
+                  fontWeight: 500,
+                  fontSize: '0.95rem'
+                }}
+              />
             </ListItem>
 
             <ListItem
@@ -311,329 +515,685 @@ const Home = () => {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                transition: 'transform 0.2s ease, background-color 0.2s ease',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                margin: '4px 0',
+                transition: 'all 0.2s ease',
                 '&:hover': {
-                  transform: 'scale(1.05)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.06)',
+                  transform: 'translateX(4px)',
                 },
               }}
             >
-              <ListItemIcon>
+              <ListItemIcon sx={{ minWidth: '40px', color: '#1976d2' }}>
                 <SettingsIcon />
               </ListItemIcon>
-              <ListItemText primary="Ρυθμίσεις" />
+              <ListItemText
+                primary="Τροποποίηση/Διαγραφή Παιχνιδιού"
+                primaryTypographyProps={{
+                  fontWeight: 500,
+                  fontSize: '0.95rem'
+                }}
+              />
             </ListItem>
           </List>
         </div>
       </Drawer>
 
       {/* Main content */}
-      <main style={{ flexGrow: 1, padding: "5px" }}>
-        <IconButton
-          sx={{
-            margin: '5px',
-            padding: '10px',  // Adjust the padding for the button
-            borderRadius: '50%',  // Make the button circular
-            '&:hover': {
-              transform: 'scale(1.1)',  // Slightly enlarge the button on hover
-            },
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',  // Add a subtle shadow
-          }}
-          edge="start"
-          color="inherit"
-          aria-label="menu"
-          onClick={handleDrawerToggle}
-        >
-          <MenuIcon />
-        </IconButton>
+      <main style={{ flexGrow: 1, padding: "12px" }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '16px',
+          backgroundColor: 'white',
+          padding: '8px 16px',
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+        }}>
+          <IconButton
+            sx={{
+              margin: '2px',
+              padding: '8px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(25, 118, 210, 0.08)',
+              color: '#1976d2',
+              '&:hover': {
+                transform: 'scale(1.1)',
+                backgroundColor: 'rgba(25, 118, 210, 0.12)',
+              },
+              transition: 'all 0.2s ease',
+            }}
+            color="inherit"
+            aria-label="menu"
+            onClick={handleDrawerToggle}
+          >
+            <MenuIcon fontSize="small" />
+          </IconButton>
 
-        <Container>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 600,
+              color: '#333',
+              textAlign: 'center',
+              flex: 1,
+              fontSize: '1.1rem',
+              letterSpacing: '0.3px',
+            }}
+          >
+            Διαχείριση Χρόνου Παιχνιδιών
+          </Typography>
+
+          <div style={{ width: '40px' }}></div> {/* Spacer for alignment */}
+        </div>
+
+        <Container maxWidth="xl" sx={{ mt: 1 }}>
           {gameInstances.length > 0 ? (
-            <TableContainer component={Paper} style={{ marginTop: "10px" }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow style={{
-                    background: 'linear-gradient(145deg, #2c2c2c, #464646)', // Darker blackish to lighter black gradient
-
-                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)', // Subtle shadow for depth on the whole row
-                    borderRadius: '4px', // Soft rounding for the row's corners to enhance the 3D effect
-                    transition: 'all 0.3s ease', // Smooth transition for any hover effects
-                  }}>
-                    <TableCell style={{
-                      fontWeight: 'bold',
-                      color: '#FFFEFF', // Light text color
-                      textAlign: 'center',
-                      boxShadow: 'none', // Remove inner shadow for seamless look
-                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
-                      border: 'none', // Remove borders
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: '16px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                border: '1px solid rgba(0, 0, 0, 0.05)',
+                backgroundColor: 'white',
+              }}
+            >
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{
+                      background: 'linear-gradient(145deg, #2c2c2c, #464646)',
+                      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
                     }}>
-                      Κατηγορία
-                    </TableCell>
-                    <TableCell style={{
-                      fontWeight: 'bold',
-                      color: '#FFFEFF',
-                      textAlign: 'center',
-                      boxShadow: 'none', // Remove inner shadow for seamless look
-                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
-                      border: 'none', // Remove borders
-                    }}>
-                      Όνομα
-                    </TableCell>
-                    <TableCell style={{
-                      fontWeight: 'bold',
-                      color: '#FFFEFF',
-                      textAlign: 'center',
-                      boxShadow: 'none', // Remove inner shadow for seamless look
-                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
-                      border: 'none', // Remove borders
-                    }}>
-                      Χρόνος Εκκίνησης
-                    </TableCell>
-                    <TableCell style={{
-                      fontWeight: 'bold',
-                      color: '#FFFEFF',
-                      textAlign: 'center',
-                      boxShadow: 'none', // Remove inner shadow for seamless look
-                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
-                      border: 'none', // Remove borders
-                    }}>
-                      Συνολικός Χρόνος
-                    </TableCell>
-                    <TableCell style={{
-                      fontWeight: 'bold',
-                      color: '#FFFEFF',
-                      textAlign: 'center',
-                      boxShadow: 'none', // Remove inner shadow for seamless look
-                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
-                      border: 'none', // Remove borders
-                    }}>
-                      Συνολικό Κόστος (€)
-                    </TableCell>
-                    <TableCell style={{
-                      fontWeight: 'bold',
-                      color: '#FFFEFF',
-                      textAlign: 'center',
-                      boxShadow: 'none', // Remove inner shadow for seamless look
-                      textShadow: '1px 1px 3px rgba(0, 0, 0, 0.4)', // Slight text shadow for contrast
-                      border: 'none', // Remove borders
-                    }}>
-                      Ενέργειες
-                    </TableCell>
-                  </TableRow>
-
-                </TableHead>
-                <TableBody>
-                  {gameInstances.map((instance) => (
-                    <TableRow key={`instance-${instance.id}`} hover>
-                      <TableCell>{instance.category_name}</TableCell>
-                      <TableCell>{instance.instance_name}</TableCell>
-                      <TableCell>
-                        {instance.start_time
-                          ? new Date(instance.start_time).toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" })
-                          : "-"}
+                      <TableCell
+                        sx={{
+                          fontWeight: 'bold',
+                          color: '#FFFFFF',
+                          textAlign: 'left',
+                          padding: '8px 16px',
+                          border: 'none',
+                          width: '25%',
+                          fontSize: '0.85rem',
+                          letterSpacing: '0.3px',
+                        }}
+                      >
+                        Όνομα
                       </TableCell>
-                      <TableCell>
-                        {instance.elapsed_time ? formatTime(instance.elapsed_time) : "-"}
+                      <TableCell
+                        sx={{
+                          fontWeight: 'bold',
+                          color: '#FFFFFF',
+                          textAlign: 'left',
+                          padding: '8px 16px',
+                          border: 'none',
+                          width: '20%',
+                          fontSize: '0.85rem',
+                          letterSpacing: '0.3px',
+                        }}
+                      >
+                        Χρόνος Εκκίνησης
                       </TableCell>
-                      <TableCell>{instance.total_cost.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Grid container spacing={0.5}>
-                          <Grid item>
-                            <Tooltip title="Εκκίνηση">
-                              <Button
-                                onClick={() => startGame(instance.id)}
-                                sx={{
-                                  transition: 'transform 0.3s',
-                                  '&:hover': {
-                                    transform: 'scale(1.1)', // Slightly scales the button on hover
-                                  },
-                                }}
-                                startIcon={
-                                  <PlayArrowIcon
-                                    sx={{
-                                      color: (theme) => (Boolean(instance.start_time) ? theme.palette.grey[500] : '#34A853'), // Green when enabled, grey when disabled
-                                    }}
-                                  />
-                                }
-                                disabled={Boolean(instance.start_time)}
-                              >
-                              </Button>
-                            </Tooltip>
-                          </Grid>
-                          <Grid item>
-                            <Tooltip title="Επαναφορά">
-                              <Button
-                                color="warning"
-                                onClick={() => resetGame(instance.id)}
-                                startIcon={<RestartAltIcon />}
-                                sx={{
-                                  transition: 'transform 0.3s',
-                                  '&:hover': {
-                                    transform: 'scale(1.1)', // Slightly scales the button on hover
-                                  },
-                                }}
-                                disabled={!instance.start_time}
-                              />
-                            </Tooltip>
-                          </Grid>
-                          <Grid item>
-                            <Tooltip title="Λήξη">
-                              <Button
-                                color="info"
-                                sx={{
-                                  transition: 'transform 0.s, background-color 0.6s, color 0.6s',
-                                  '&:hover': {
-                                    transform: 'scale(1.1)', // Slightly scales the button on hover
-                                    backgroundColor: '#D6EAF8', // Change to a custom color during hover
-                                  },
-                                }}
-                                onClick={() => handleFinishConfirm(instance.id)}
-                                startIcon={<CheckCircleIcon />}
-                                disabled={!instance.start_time || !Boolean(getTimerFromLocalStorage(instance.id.toString()))}
-                              />
-                            </Tooltip>
-                          </Grid>
-                        </Grid>
+                      <TableCell
+                        sx={{
+                          fontWeight: 'bold',
+                          color: '#FFFFFF',
+                          textAlign: 'left',
+                          padding: '8px 16px',
+                          border: 'none',
+                          width: '20%',
+                          fontSize: '0.85rem',
+                          letterSpacing: '0.3px',
+                        }}
+                      >
+                        Συνολικός Χρόνος
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: 'bold',
+                          color: '#FFFFFF',
+                          textAlign: 'left',
+                          padding: '8px 16px',
+                          border: 'none',
+                          width: '15%',
+                          fontSize: '0.85rem',
+                          letterSpacing: '0.3px',
+                        }}
+                      >
+                        Συνολικό Κόστος (€)
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: 'bold',
+                          color: '#FFFFFF',
+                          textAlign: 'center',
+                          padding: '8px 16px',
+                          border: 'none',
+                          width: '20%',
+                          fontSize: '0.85rem',
+                          letterSpacing: '0.3px',
+                        }}
+                      >
+                        Ενέργειες
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {Object.entries(
+                      sortedInstances.reduce((acc, instance) => {
+                        const category = instance.category_name || 'Uncategorized';
+                        if (!acc[category]) {
+                          acc[category] = [];
+                        }
+                        acc[category].push(instance);
+                        return acc;
+                      }, {} as Record<string, GameInstance[]>)
+                    )
+                      .sort(([categoryA], [categoryB]) => {
+                        const orderA = customSortOrder[categoryA] || Infinity;
+                        const orderB = customSortOrder[categoryB] || Infinity;
+                        return orderA - orderB;
+                      })
+                      .map(([category, instances]) => (
+                        <React.Fragment key={category}>
+                          <TableRow sx={{ 
+                            backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                            '&:hover': {
+                              backgroundColor: 'rgba(25, 118, 210, 0.06)',
+                            },
+                          }}>
+                            <TableCell colSpan={5} sx={{ 
+                              fontWeight: 'bold', 
+                              padding: '4px 16px',
+                              fontSize: '0.8rem',
+                              color: '#1976d2',
+                              letterSpacing: '0.3px',
+                            }}>
+                              {category}
+                            </TableCell>
+                          </TableRow>
+                          {instances.map((instance) => (
+                            <TableRow
+                              key={`instance-${instance.id}`}
+                              hover
+                              sx={{
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(25, 118, 210, 0.02)',
+                                },
+                                '&:nth-of-type(odd)': {
+                                  backgroundColor: 'rgba(0, 0, 0, 0.01)',
+                                },
+                              }}
+                            >
+                              <TableCell sx={{ 
+                                padding: '4px 16px', 
+                                borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
+                                fontSize: '0.8rem',
+                                color: '#333',
+                              }}>
+                                {instance.instance_name}
+                              </TableCell>
+                              <TableCell sx={{ 
+                                padding: '4px 16px', 
+                                borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
+                                fontSize: '0.8rem',
+                                color: '#666',
+                              }}>
+                                {instance.start_time
+                                  ? new Date(instance.start_time).toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" })
+                                  : "-"}
+                              </TableCell>
+                              <TableCell sx={{ 
+                                padding: '4px 16px', 
+                                borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
+                                fontSize: '0.8rem',
+                                color: '#666',
+                              }}>
+                                {instance.elapsed_time ? formatTime(instance.elapsed_time) : "-"}
+                              </TableCell>
+                              <TableCell sx={{ 
+                                padding: '4px 16px', 
+                                borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
+                                fontSize: '0.8rem',
+                              }}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 500,
+                                    color: instance.total_cost > 0 ? '#1976d2' : '#666',
+                                    fontSize: '0.8rem',
+                                  }}
+                                >
+                                  {instance.total_cost.toFixed(2)}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{
+                                padding: '4px 16px',
+                                borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
+                                textAlign: 'center',
+                              }}>
+                                <Grid container spacing={0.5} justifyContent="center">
+                                  <Grid item>
+                                    <Tooltip title="Εκκίνηση" arrow placement="top">
+                                      <span>
+                                        <IconButton
+                                          onClick={() => startGame(instance.id)}
+                                          disabled={Boolean(instance.start_time)}
+                                          sx={{
+                                            backgroundColor: Boolean(instance.start_time) 
+                                              ? 'rgba(0, 0, 0, 0.04)' 
+                                              : 'rgba(52, 168, 83, 0.1)',
+                                            color: Boolean(instance.start_time) 
+                                              ? 'rgba(0, 0, 0, 0.26)' 
+                                              : '#34A853',
+                                            '&:hover': {
+                                              backgroundColor: Boolean(instance.start_time) 
+                                                ? 'rgba(0, 0, 0, 0.04)' 
+                                                : 'rgba(52, 168, 83, 0.2)',
+                                              transform: Boolean(instance.start_time) ? 'none' : 'scale(1.1)',
+                                            },
+                                            transition: 'all 0.2s ease',
+                                            padding: '2px',
+                                          }}
+                                          size="small"
+                                        >
+                                          <PlayArrowIcon sx={{ fontSize: '1rem' }} />
+                                        </IconButton>
+                                      </span>
+                                    </Tooltip>
+                                  </Grid>
+                                  <Grid item>
+                                    <Tooltip title="Επαναφορά" arrow placement="top">
+                                      <span>
+                                        <IconButton
+                                          onClick={() => resetGame(instance.id)}
+                                          disabled={!instance.start_time}
+                                          sx={{
+                                            backgroundColor: !instance.start_time 
+                                              ? 'rgba(0, 0, 0, 0.04)' 
+                                              : 'rgba(251, 188, 5, 0.1)',
+                                            color: !instance.start_time 
+                                              ? 'rgba(0, 0, 0, 0.26)' 
+                                              : '#FBBC05',
+                                            '&:hover': {
+                                              backgroundColor: !instance.start_time 
+                                                ? 'rgba(0, 0, 0, 0.04)' 
+                                                : 'rgba(251, 188, 5, 0.2)',
+                                              transform: !instance.start_time ? 'none' : 'scale(1.1)',
+                                            },
+                                            transition: 'all 0.2s ease',
+                                            padding: '2px',
+                                          }}
+                                          size="small"
+                                        >
+                                          <RestartAltIcon sx={{ fontSize: '1rem' }} />
+                                        </IconButton>
+                                      </span>
+                                    </Tooltip>
+                                  </Grid>
+                                  <Grid item>
+                                    <Tooltip title="Λήξη" arrow placement="top">
+                                      <span>
+                                        <IconButton
+                                          onClick={() => handleFinishConfirm(instance.id)}
+                                          disabled={!instance.start_time || !Boolean(getTimerFromLocalStorage(instance.id.toString()))}
+                                          sx={{
+                                            backgroundColor: !instance.start_time || !Boolean(getTimerFromLocalStorage(instance.id.toString()))
+                                              ? 'rgba(0, 0, 0, 0.04)'
+                                              : 'rgba(66, 133, 244, 0.1)',
+                                            color: !instance.start_time || !Boolean(getTimerFromLocalStorage(instance.id.toString()))
+                                              ? 'rgba(0, 0, 0, 0.26)'
+                                              : '#4285F4',
+                                            '&:hover': {
+                                              backgroundColor: !instance.start_time || !Boolean(getTimerFromLocalStorage(instance.id.toString()))
+                                                ? 'rgba(0, 0, 0, 0.04)'
+                                                : 'rgba(66, 133, 244, 0.2)',
+                                              transform: !instance.start_time || !Boolean(getTimerFromLocalStorage(instance.id.toString()))
+                                                ? 'none'
+                                                : 'scale(1.1)',
+                                            },
+                                            transition: 'all 0.2s ease',
+                                            padding: '2px',
+                                          }}
+                                          size="small"
+                                        >
+                                          <CheckCircleIcon sx={{ fontSize: '1rem' }} />
+                                        </IconButton>
+                                      </span>
+                                    </Tooltip>
+                                  </Grid>
+                                </Grid>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </React.Fragment>
+                      ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {/* Table footer with sorting instructions */}
+              <div style={{
+                padding: '12px 16px',
+                borderTop: '1px solid rgba(0, 0, 0, 0.05)',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                backgroundColor: 'rgba(25, 118, 210, 0.02)',
+              }}>
+                <Button
+                  variant="contained"
+                  onClick={() => setOpenCustomSortPopup(true)}
+                  startIcon={<CategoryIcon />}
+                  sx={{
+                    '&:hover': { backgroundColor: '#1565c0' },
+                    textTransform: 'none',
+                    fontSize: '0.85rem',
+                    padding: '6px 16px',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(25, 118, 210, 0.2)',
+                  }}
+                >
+                  Ταξινόμηση
+                </Button>
+              </div>
+            </Paper>
           ) : (
-            <Typography variant="body1" color="textSecondary" style={{ marginTop: "20px" }}>
-              No game instances found.
-            </Typography>
+            <Paper
+              elevation={0}
+              sx={{
+                padding: '32px',
+                textAlign: 'center',
+                borderRadius: '16px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                border: '1px solid rgba(0, 0, 0, 0.05)',
+                backgroundColor: 'white',
+              }}
+            >
+              <CategoryIcon sx={{ fontSize: '3rem', color: '#1976d2', marginBottom: '16px' }} />
+              <Typography variant="h6" sx={{ color: '#333', marginBottom: '8px' }}>
+                Δεν βρέθηκαν παιχνίδια
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Προσθέστε νέα παιχνίδια για να ξεκινήσετε
+              </Typography>
+            </Paper>
           )}
         </Container>
       </main>
-
-      {/* Finish dialog
-      <Dialog open={openFinishDialog} onClose={handleFinishDialogClose}>
-        <DialogTitle>Finish Game</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to finish this game? All progress will be saved.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleFinishDialogClose} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleFinishConfirm} color="success" autoFocus>
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog> */}
 
       {/* Snackbar for notifications */}
       <Snackbar
         open={openSnackbar}
         autoHideDuration={3000}
         onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: "100%" }}>
+        <Alert
+          onClose={handleSnackbarClose}
+          severity="info"
+          sx={{
+            width: "100%",
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+          }}
+        >
           {message}
         </Alert>
       </Snackbar>
 
-
       {/* Password Dialog */}
       <Dialog
-  open={openDialog}
-  onClose={handleDialogClose}
-  sx={{
-    '& .MuiDialog-paper': {
-      borderRadius: '16px', // Rounded corners
-      padding: '16px', // Add padding around the dialog
-      boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.2)', // Enhanced shadow for depth
-      backgroundColor: '#f9f9f9', // Light gray background
-    },
-  }}
->
-  <DialogTitle 
-    sx={{
-      fontWeight: 'bold',
-      textAlign: 'center',
-      fontSize: '1.5rem',
-      color: '#333', // Dark gray for text
-    }}
-  >
-    Εισαγωγή Κωδικού
-  </DialogTitle>
+        open={openDialog}
+        onClose={handleDialogClose}
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: '16px',
+            padding: '16px',
+            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.2)',
+            backgroundColor: '#f9f9f9',
+            maxWidth: '400px',
+            width: '100%'
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 'bold',
+            textAlign: 'center',
+            fontSize: '1.5rem',
+            color: '#333',
+            padding: '16px 24px 8px'
+          }}
+        >
+          Εισαγωγή Κωδικού
+        </DialogTitle>
 
-  <DialogContent 
-    sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '16px', // Spacing between elements
-      padding: '16px 24px',
-    }}
-  >
-    <TextField
-      autoFocus
-      margin="dense"
-      label="Κωδικός"
-      type="password"
-      fullWidth
-      variant="outlined"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-      sx={{
-        '& .MuiOutlinedInput-root': {
-          borderRadius: '8px', // Round input corners
-        },
-        '& label.Mui-focused': {
-          color: '#007bff', // Light blue focus color
-        },
-        '& .MuiOutlinedInput-root.Mui-focused fieldset': {
-          borderColor: '#007bff', // Light blue border on focus
-        },
-      }}
-    />
-  </DialogContent>
+        <DialogContent
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            padding: '16px 24px',
+          }}
+        >
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Κωδικός"
+            type="password"
+            fullWidth
+            variant="outlined"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '8px',
+              },
+              '& label.Mui-focused': {
+                color: '#1976d2',
+              },
+              '& .MuiOutlinedInput-root.Mui-focused fieldset': {
+                borderColor: '#1976d2',
+              },
+            }}
+          />
+        </DialogContent>
 
-  <DialogActions 
-    sx={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      padding: '8px 24px',
-      gap: '8px', // Space between buttons
-    }}
-  >
-    <Button
-      onClick={handleDialogClose}
-      sx={{
-        color: '#fff',
-        backgroundColor: '#888',
-        borderRadius: '8px',
-        padding: '8px 16px',
-        textTransform: 'none',
-        '&:hover': {
-          backgroundColor: '#666',
-        },
-      }}
-    >
-      Ακυρο
-    </Button>
-    <Button
-      onClick={handlePasswordSubmit}
-      sx={{
-        color: '#fff',
-        backgroundColor: '#007bff',
-        borderRadius: '8px',
-        padding: '8px 16px',
-        textTransform: 'none',
-        '&:hover': {
-          backgroundColor: '#0056b3',
-        },
-      }}
-    >
-      Υποβολή
-    </Button>
-  </DialogActions>
-</Dialog>
+        <DialogActions
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            padding: '8px 24px 16px',
+            gap: '8px',
+          }}
+        >
+          <Button
+            onClick={handleDialogClose}
+            sx={{
+              color: '#fff',
+              backgroundColor: '#888',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: '#666',
+              },
+            }}
+          >
+            Ακυρο
+          </Button>
+          <Button
+            onClick={handlePasswordSubmit}
+            sx={{
+              color: '#fff',
+              backgroundColor: '#1976d2',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: '#1565c0',
+              },
+            }}
+          >
+            Υποβολή
+          </Button>
+        </DialogActions>
+      </Dialog>
 
+
+      <Dialog
+        open={openCustomSortPopup}
+        onClose={() => setOpenCustomSortPopup(false)}
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: '12px',
+            padding: '16px',
+            maxWidth: '400px',
+            width: '100%',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            backgroundColor: '#f9f9f9',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontSize: '1.1rem',
+            fontWeight: '600',
+            textAlign: 'center',
+            padding: '8px 0 16px',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+            color: '#333',
+            margin: 0,
+          }}
+        >
+          Ταξινόμηση Κατηγοριών
+        </DialogTitle>
+        <DialogContent sx={{ padding: '16px 0' }}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: '#666',
+              marginBottom: '12px',
+              fontSize: '0.8rem',
+              textAlign: 'center',
+            }}
+          >
+            Σύρετε τις κατηγορίες για να αλλάξετε τη σειρά τους
+          </Typography>
+          <List sx={{ padding: 0 }}>
+            {(categories as string[]).map((category: string, index: number) => (
+              <ListItem
+                key={category}
+                sx={{
+                  padding: '4px 8px',
+                  margin: '2px 0',
+                  backgroundColor: 'white',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(0, 0, 0, 0.05)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                    borderColor: 'rgba(0, 0, 0, 0.1)',
+                  },
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: '32px', color: '#1976d2' }}>
+                  <CategoryIcon sx={{ fontSize: '1.1rem' }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={category}
+                  primaryTypographyProps={{
+                    fontSize: '0.85rem',
+                    fontWeight: 500,
+                    color: '#333',
+                  }}
+                />
+                <TextField
+                  type="number"
+                  value={customSortOrder[category] || index + 1}
+                  onChange={(e) =>
+                    setCustomSortOrder((prev) => ({
+                      ...prev,
+                      [category]: parseInt(e.target.value, 10),
+                    }))
+                  }
+                  sx={{
+                    width: '60px',
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '4px',
+                      backgroundColor: 'white',
+                      '&:hover fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      display: 'none',
+                    },
+                    '& .MuiOutlinedInput-input': {
+                      padding: '4px 6px',
+                      fontSize: '0.8rem',
+                      textAlign: 'center',
+                    },
+                  }}
+                  InputProps={{
+                    inputProps: {
+                      min: 1,
+                      style: { textAlign: 'center' },
+                    },
+                  }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            padding: '12px 0 0',
+            borderTop: '1px solid rgba(0, 0, 0, 0.08)',
+            margin: 0,
+            gap: '8px',
+          }}
+        >
+          <Button
+            onClick={() => setOpenCustomSortPopup(false)}
+            sx={{
+              textTransform: 'none',
+              color: '#666',
+              fontSize: '0.85rem',
+              padding: '6px 16px',
+              borderRadius: '6px',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              },
+            }}
+          >
+            Ακύρωση
+          </Button>
+          <Button
+            onClick={() => {
+              applyCustomSort();
+              setOpenCustomSortPopup(false);
+            }}
+            variant="contained"
+            sx={{
+              textTransform: 'none',
+              backgroundColor: '#1976d2',
+              color: '#fff',
+              fontSize: '0.85rem',
+              padding: '6px 16px',
+              borderRadius: '6px',
+              '&:hover': {
+                backgroundColor: '#1565c0',
+              },
+            }}
+          >
+            Εφαρμογή
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

@@ -9,6 +9,8 @@ interface GameData {
     category_name: string;
     start_time: string;
     end_time: string | null;
+    avg_total_cost?: number; // Added for averages
+    avg_elapsed_time?: number; // Added for averages
 }
 
 const TrafficAnalytics = () => {
@@ -17,9 +19,9 @@ const TrafficAnalytics = () => {
     const [categoryColors, setCategoryColors] = useState<{ [key: string]: string }>({});
     const [dateOption, setDateOption] = useState<'daily' | 'custom'>('daily');
     const [selectedDate, setSelectedDate] = useState<string>('');
-    const [weeklyData, setWeeklyData] = useState<GameData[]>([]);
     const [chartSeries, setChartSeries] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
+    const [hourlyTraffic, setHourlyTraffic] = useState<{ [key: string]: number }>({});
 
     useEffect(() => {
         fetchCategories();
@@ -40,10 +42,10 @@ const TrafficAnalytics = () => {
     }, [categories]);
 
     useEffect(() => {
-        if (categories.length > 0 && weeklyData.length > 0) {
-            generateChartSeries(weeklyData);
+        if (trafficData.length > 0) {
+            calculateHourlyTraffic();
         }
-    }, [categories, weeklyData]);
+    }, [trafficData]);
 
     const fetchCategories = async () => {
         setLoading(true);
@@ -100,9 +102,14 @@ const TrafficAnalytics = () => {
         setLoading(true);
         try {
             const fetchedData = await invoke<GameData[]>('fetch_weekly_data');
-            setWeeklyData(fetchedData || []);
+            if (fetchedData && fetchedData.length > 0) {
+                generateChartSeries(fetchedData);
+            } else {
+                setChartSeries([]);
+            }
         } catch (error) {
-            console.error('Error fetching weekly traffic data:', error);
+            console.error('Error fetching weekly data:', error);
+            setChartSeries([]);
         } finally {
             setLoading(false);
         }
@@ -115,16 +122,31 @@ const TrafficAnalytics = () => {
         }));
 
         data.forEach((game) => {
-            const day = new Date(game.start_time).getDay();
+            const date = new Date(game.start_time);
+            const day = date.getDay();
             const categoryIndex = categories.indexOf(game.category_name);
-            const adjustedDay = day === 0 ? 6 : day - 1;
-
-            if (categoryIndex !== -1) {
-                series[categoryIndex].data[adjustedDay] += 1;
+            if (categoryIndex !== -1 && day >= 0 && day < 7) {
+                series[categoryIndex].data[day] += 1;
             }
         });
 
-        setChartSeries(series.filter(serie => serie.data.some(value => value > 0)));
+        setChartSeries(series
+            .filter(serie => serie.data.some(value => value > 0))
+            .map(serie => ({
+                ...serie,
+                data: serie.data.map(value => Number(value))
+            }))
+        );
+    };
+
+    const calculateHourlyTraffic = () => {
+        const hourlyCounts: { [key: string]: number } = {};
+        trafficData.forEach(game => {
+            const startTime = new Date(game.start_time);
+            const hour = startTime.getHours();
+            hourlyCounts[hour] = (hourlyCounts[hour] || 0) + 1;
+        });
+        setHourlyTraffic(hourlyCounts);
     };
 
     const chartData = Object.values(trafficData.reduce((acc, game) => {
@@ -164,7 +186,7 @@ const TrafficAnalytics = () => {
             },
         },
         tooltip: {
-            custom: function({ series, seriesIndex, dataPointIndex, w }) {
+            custom: function ({ series, seriesIndex, dataPointIndex, w }) {
                 const data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
                 const startTime = new Date(data.y[0]).toLocaleTimeString();
                 const endTime = new Date(data.y[1]).toLocaleTimeString();
@@ -183,20 +205,77 @@ const TrafficAnalytics = () => {
     };
 
     const weeklyChartOptions: ApexOptions = {
-        chart: { type: 'bar', height: 200 },
-        plotOptions: { bar: { columnWidth: '55%' } },
-        xaxis: { categories: ['ΔΕΥ', 'ΤΡΙ', 'ΤΕΤ', 'ΠΕΜ', 'ΠΑΡ', 'ΣΑΒ', 'ΚΥΡ'] },
-        yaxis: { title: { text: 'Σύνολο ' } },
+        chart: { 
+            type: 'bar', 
+            height: 350,
+            stacked: true,
+            toolbar: { show: false }
+        },
+        plotOptions: { 
+            bar: { 
+                columnWidth: '55%',
+                borderRadius: 4
+            } 
+        },
+        xaxis: {
+            categories: ['ΔΕΥ', 'ΤΡΙ', 'ΤΕΤ', 'ΠΕΜ', 'ΠΑΡ', 'ΣΑΒ', 'ΚΥΡ'],
+            title: { text: 'Ημέρα' }
+        },
+        yaxis: { 
+            title: { text: 'Αριθμός Παιχνιδιών' }
+        },
         fill: { opacity: 1 },
-        tooltip: { y: { formatter: (val) => `${val} παιχνίδια` } },
+        tooltip: { 
+            y: { formatter: (val) => `${val} παιχνίδια` }
+        },
         colors: Object.values(categoryColors),
+        legend: {
+            position: 'top',
+            horizontalAlign: 'right'
+        }
     };
+
+    const hourlyChartOptions: ApexOptions = {
+        chart: {
+            type: 'bar',
+            height: 350,
+            toolbar: { show: false }
+        },
+        plotOptions: {
+            bar: {
+                columnWidth: '80%',
+                borderRadius: 4
+            }
+        },
+        xaxis: {
+            categories: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+            title: { text: 'Ώρα' }
+        },
+        yaxis: {
+            title: { text: 'Αριθμός Παιχνιδιών' }
+        },
+        title: {
+            text: 'Κίνηση ανά Ώρα',
+            align: 'center'
+        },
+        colors: ['#2196f3'],
+        tooltip: {
+            y: {
+                formatter: (val) => `${val} παιχνίδια`
+            }
+        }
+    };
+
+    const hourlyChartSeries = [{
+        name: 'Παιχνίδια',
+        data: Array.from({ length: 24 }, (_, i) => hourlyTraffic[i] || 0)
+    }];
 
     return (
         <Grid container spacing={2}>
             <Grid item xs={12}>
-                <Card sx={{ padding: 3, boxShadow: 2 }}>
-                    <Typography variant="h5" sx={{ mb: 2 }}>Ανάλυση Κίνησης</Typography>
+                <Card sx={{ padding: 2, boxShadow: 2 }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>Ανάλυση Κίνησης</Typography>
                     <Grid container spacing={2} alignItems="center">
                         <Grid item>
                             <Select
@@ -233,9 +312,25 @@ const TrafficAnalytics = () => {
                 </Card>
             </Grid>
 
-            <Grid item xs={12}>
-                <Card sx={{ padding: 3, boxShadow: 2 }}>
-                    <Typography variant="h5" sx={{ mb: 2 }}>Εβδομαδιαία Επισκόπηση Κίνησης</Typography>
+            <Grid item xs={12} md={6}>
+                <Card sx={{ padding: 2, boxShadow: 2, height: '100%' }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>Κίνηση ανά Ώρα</Typography>
+                    {loading ? (
+                        <CircularProgress sx={{ marginTop: 2 }} />
+                    ) : (
+                        <Chart
+                            options={hourlyChartOptions}
+                            series={hourlyChartSeries}
+                            type="bar"
+                            height={350}
+                        />
+                    )}
+                </Card>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+                <Card sx={{ padding: 2, boxShadow: 2, height: '100%' }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>Επισκόπηση Κίνησης</Typography>
                     {loading ? (
                         <CircularProgress sx={{ marginTop: 2 }} />
                     ) : (
@@ -243,7 +338,7 @@ const TrafficAnalytics = () => {
                             options={weeklyChartOptions}
                             series={chartSeries}
                             type="bar"
-                            height={200}
+                            height={350}
                         />
                     )}
                 </Card>

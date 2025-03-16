@@ -7,6 +7,11 @@ use std::env;
 pub struct Database {
     pub pool: Pool<Sqlite>,
 }
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct CategoryInstance {
+    pub category_name: String,
+    pub instance_name: String,
+}
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct GameInstance {
@@ -24,9 +29,9 @@ impl Database {
     // Update new() to return Result<Self, sqlx::Error>
     pub async fn new() -> Result<Self, sqlx::Error> {
         dotenv().ok();
-        // let database_url = String::from("sqlite:C:/Users/thkos/AppData/Roaming/TMS/games.db"); // it will create a file in the root of our folder, my database is names 'sqlite.db'
+        let database_url = String::from("sqlite:C:/Users/thkos/AppData/Roaming/TMS/games.db"); // it will create a file in the root of our folder, my database is names 'sqlite.db'
 
-        let database_url = String::from("./games.db"); // Path to your database file
+        // let database_url = String::from("./games.db"); // Path to your database file
 
         // let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env");
 
@@ -80,6 +85,8 @@ impl Database {
         
         Ok(())
     }
+
+    
 
     pub async fn get_game_instances(&self) -> Result<Vec<GameInstance>, sqlx::Error> {
         let rows = sqlx::query_as::<_, GameInstance>(
@@ -162,6 +169,8 @@ impl Database {
         Ok(rows)
     }
 
+
+
     pub async fn get_distinct_instances(&self) -> Result<Vec<String>, sqlx::Error> {
         let rows = sqlx::query_scalar::<_, String>(
             r#"
@@ -172,6 +181,88 @@ impl Database {
         .fetch_all(&self.pool)
         .await?;
         
+        Ok(rows)
+    }
+    pub async fn fetch_monthly_average(
+        &self,
+        category_name: Option<&str>,
+        instance_name: Option<&str>,
+        month: &str, // Format: "YYYY-MM"
+    ) -> Result<Vec<GameInstance>, sqlx::Error> {
+        let query = r#"
+            SELECT 
+                instance_name,
+                category_name,
+                AVG(total_cost) as avg_total_cost,
+                AVG(elapsed_time) as avg_elapsed_time,
+                strftime('%Y-%m', start_time) as month
+            FROM games
+            WHERE strftime('%Y-%m', start_time) = ?1
+            AND (?2 IS NULL OR category_name = ?2)
+            AND (?3 IS NULL OR instance_name = ?3)
+            GROUP BY instance_name, category_name
+            ORDER BY category_name, instance_name
+        "#;
+        let rows = sqlx::query_as::<_, GameInstance>(query)
+            .bind(month)
+            .bind(category_name)
+            .bind(instance_name)
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(rows)
+    }
+
+    // Fetch average data for a specific year
+    pub async fn fetch_yearly_average(
+        &self,
+        category_name: Option<&str>,
+        instance_name: Option<&str>,
+        year: &str, // Format: "YYYY"
+    ) -> Result<Vec<GameInstance>, sqlx::Error> {
+        let query = r#"
+            SELECT 
+                instance_name,
+                category_name,
+                AVG(total_cost) as avg_total_cost,
+                AVG(elapsed_time) as avg_elapsed_time,
+                strftime('%Y', start_time) as year
+            FROM games
+            WHERE strftime('%Y', start_time) = ?1
+            AND (?2 IS NULL OR category_name = ?2)
+            AND (?3 IS NULL OR instance_name = ?3)
+            GROUP BY instance_name, category_name
+            ORDER BY category_name, instance_name
+        "#;
+        let rows = sqlx::query_as::<_, GameInstance>(query)
+            .bind(year)
+            .bind(category_name)
+            .bind(instance_name)
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(rows)
+    }
+
+
+    pub async fn fetch_yearly_data(
+        &self,
+        category_name: Option<&str>,
+        instance_name: Option<&str>,
+    ) -> Result<Vec<GameInstance>, sqlx::Error> {
+        let query = r#"
+            SELECT *
+            FROM games g1
+            WHERE total_cost > 0
+            AND elapsed_time > 0
+            AND strftime('%Y', start_time) = strftime('%Y', 'now')
+            AND (?1 IS NULL OR category_name = ?1)
+            AND (?2 IS NULL OR instance_name = ?2)
+            ORDER BY g1.category_name, g1.instance_name
+        "#;
+        let rows = sqlx::query_as::<_, GameInstance>(query)
+            .bind(category_name)
+            .bind(instance_name)
+            .fetch_all(&self.pool)
+            .await?;
         Ok(rows)
     }
 
@@ -198,6 +289,20 @@ impl Database {
             .await?;
         Ok(rows)
     }
+
+    pub async fn get_category_instance_combinations(&self) -> Result<Vec<CategoryInstance>, sqlx::Error> {
+        let rows = sqlx::query_as::<_, CategoryInstance>(
+            r#"
+            SELECT DISTINCT category_name, instance_name
+            FROM games
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await?;
+    
+        Ok(rows)
+    }
+    
 
     pub async fn delete_game_by_id(&self, id: i16) -> Result<(), sqlx::Error> {
         sqlx::query(

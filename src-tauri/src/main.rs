@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod db;
-use db::{Database, GameInstance};
+use db::{Database, GameInstance, CategoryInstance};
 use tokio::sync::OnceCell;
 use tauri::command;
 use dotenvy::dotenv;
@@ -109,6 +109,8 @@ async fn fetch_daily_data(category_name: Option<String>, instance_name: Option<S
         .map_err(|e| e.to_string())
 }
 
+
+
 // Command to fetch weekly data
 #[command]
 async fn fetch_weekly_data(category_name: Option<String>, instance_name: Option<String>) -> Result<Vec<GameInstance>, String> {
@@ -135,6 +137,50 @@ async fn fetch_custom_data(category_name: Option<String>, instance_name: Option<
         .await
         .map_err(|e| e.to_string())
 }
+#[command]
+async fn fetch_yearly_data(category_name: Option<String>, instance_name: Option<String>) -> Result<Vec<GameInstance>, String> {
+    let db = DATABASE.get().expect("Database should be initialized");
+    db.fetch_yearly_data(category_name.as_deref(), instance_name.as_deref())
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[command]
+async fn get_category_instance_combinations() -> Result<Vec<CategoryInstance>, String> {
+    let db = DATABASE.get().expect("Database should be initialized");
+
+    let combinations = db
+        .get_category_instance_combinations()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(combinations)
+}
+
+#[command]
+async fn fetch_monthly_average(
+    category_name: Option<String>,
+    instance_name: Option<String>,
+    month: String,
+) -> Result<Vec<GameInstance>, String> {
+    let db = DATABASE.get().expect("Database should be initialized");
+    db.fetch_monthly_average(category_name.as_deref(), instance_name.as_deref(), &month)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[command]
+async fn fetch_yearly_average(
+    category_name: Option<String>,
+    instance_name: Option<String>,
+    year: String,
+) -> Result<Vec<GameInstance>, String> {
+    let db = DATABASE.get().expect("Database should be initialized");
+    db.fetch_yearly_average(category_name.as_deref(), instance_name.as_deref(), &year)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 
 // Command to fetch distinct categories
 #[command]
@@ -181,7 +227,11 @@ async fn main() {
             fetch_custom_data,
             get_distinct_categories, 
             get_distinct_instances,
-            delete_game_by_id
+            delete_game_by_id,
+            get_category_instance_combinations, 
+            fetch_yearly_data,
+            fetch_yearly_average,
+            fetch_monthly_average,
             
         ])
         .run(tauri::generate_context!())
