@@ -70,8 +70,10 @@ const Home = () => {
   const [selectedInstanceId, setSelectedInstanceId] = useState<number | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [password, setPassword] = useState("");
-  const [redirectToAnalytics, setRedirectToAnalytics] = useState(false);
-  const [redirectToProperties, setRedirectToProperties] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    // Initialize from localStorage
+    return localStorage.getItem('isLoggedIn') === 'true';
+  });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [customSortOrder, setCustomSortOrder] = useState<Record<string, number>>({});
   const [openCustomSortPopup, setOpenCustomSortPopup] = useState(false);
@@ -318,42 +320,42 @@ const Home = () => {
   };
 
   // Dialog handling
-  const handleCreateCategoryClick = () => {
-    setOpenDialog(true);
-    setRedirectToAnalytics(false);
-    setRedirectToProperties(false);
-  };
-
-  const handleDialogClose = () => {
-    setOpenDialog(false);
-    setPassword(""); // Clear password field
-  };
-
-  const handlePasswordSubmit = () => {
+  const handleLogin = () => {
     const correctPassword = "0000"; // Replace with your actual password
     if (password === correctPassword) {
-      handleDialogClose();
-      if (redirectToProperties) {
-        navigate("/options");
-        return;
-      }
-      navigate(redirectToAnalytics ? "/analytics" : "/create-category");
+      setIsLoggedIn(true);
+      localStorage.setItem('isLoggedIn', 'true');
+      setOpenDialog(false);
+      setPassword("");
+      showSnackbar("Επιτυχής σύνδεση");
     } else {
       showSnackbar("Λάθος κωδικός πρόσβασης");
     }
   };
 
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('isLoggedIn');
+    setDrawerOpen(false);
+    showSnackbar("Αποσύνδεση");
+  };
+
+  const handleCreateCategoryClick = () => {
+    if (isLoggedIn) {
+      navigate("/create-category");
+    }
+  };
+
   const handleAnalyticsClick = () => {
-    setAnchorEl(null);
-    setOpenDialog(true);
-    setRedirectToAnalytics(true);
-    setRedirectToProperties(false);
+    if (isLoggedIn) {
+      navigate("/analytics");
+    }
   };
 
   const handlePropertiesClick = () => {
-    setAnchorEl(null);
-    setOpenDialog(true);
-    setRedirectToProperties(true);
+    if (isLoggedIn) {
+      navigate("/options");
+    }
   };
 
   const formatTime = (elapsed: number) => {
@@ -552,25 +554,27 @@ const Home = () => {
           borderRadius: '12px',
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
         }}>
-          <IconButton
-            sx={{
-              margin: '2px',
-              padding: '8px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(25, 118, 210, 0.08)',
-              color: '#1976d2',
-              '&:hover': {
-                transform: 'scale(1.1)',
-                backgroundColor: 'rgba(25, 118, 210, 0.12)',
-              },
-              transition: 'all 0.2s ease',
-            }}
-            color="inherit"
-            aria-label="menu"
-            onClick={handleDrawerToggle}
-          >
-            <MenuIcon fontSize="small" />
-          </IconButton>
+          {isLoggedIn && (
+            <IconButton
+              sx={{
+                margin: '2px',
+                padding: '8px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                color: '#1976d2',
+                '&:hover': {
+                  transform: 'scale(1.1)',
+                  backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                },
+                transition: 'all 0.2s ease',
+              }}
+              color="inherit"
+              aria-label="menu"
+              onClick={handleDrawerToggle}
+            >
+              <MenuIcon fontSize="small" />
+            </IconButton>
+          )}
 
           <Typography
             variant="h6"
@@ -586,7 +590,41 @@ const Home = () => {
             Διαχείριση Χρόνου Παιχνιδιών
           </Typography>
 
-          <div style={{ width: '40px' }}></div> {/* Spacer for alignment */}
+          {isLoggedIn ? (
+            <Button
+              onClick={handleLogout}
+              variant="outlined"
+              sx={{
+                color: '#1976d2',
+                borderColor: '#1976d2',
+                '&:hover': {
+                  borderColor: '#1565c0',
+                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                },
+                textTransform: 'none',
+                borderRadius: '8px',
+                padding: '6px 16px',
+              }}
+            >
+              Αποσύνδεση
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setOpenDialog(true)}
+              variant="contained"
+              sx={{
+                backgroundColor: '#1976d2',
+                '&:hover': {
+                  backgroundColor: '#1565c0',
+                },
+                textTransform: 'none',
+                borderRadius: '8px',
+                padding: '6px 16px',
+              }}
+            >
+              Σύνδεση
+            </Button>
+          )}
         </div>
 
         <Container maxWidth="xl" sx={{ mt: 1 }}>
@@ -947,7 +985,7 @@ const Home = () => {
       {/* Password Dialog */}
       <Dialog
         open={openDialog}
-        onClose={handleDialogClose}
+        onClose={() => setOpenDialog(false)}
         sx={{
           '& .MuiDialog-paper': {
             borderRadius: '16px',
@@ -968,7 +1006,7 @@ const Home = () => {
             padding: '16px 24px 8px'
           }}
         >
-          Εισαγωγή Κωδικού
+          Σύνδεση
         </DialogTitle>
 
         <DialogContent
@@ -1011,7 +1049,7 @@ const Home = () => {
           }}
         >
           <Button
-            onClick={handleDialogClose}
+            onClick={() => setOpenDialog(false)}
             sx={{
               color: '#fff',
               backgroundColor: '#888',
@@ -1026,7 +1064,7 @@ const Home = () => {
             Ακυρο
           </Button>
           <Button
-            onClick={handlePasswordSubmit}
+            onClick={handleLogin}
             sx={{
               color: '#fff',
               backgroundColor: '#1976d2',
@@ -1038,7 +1076,7 @@ const Home = () => {
               },
             }}
           >
-            Υποβολή
+            Σύνδεση
           </Button>
         </DialogActions>
       </Dialog>
