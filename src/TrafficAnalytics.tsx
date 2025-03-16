@@ -255,7 +255,7 @@ const TrafficAnalytics = () => {
             title: { text: 'Αριθμός Παιχνιδιών' }
         },
         title: {
-            text: 'Κίνηση ανά Ώρα',
+            text: 'Κίνηση',
             align: 'center'
         },
         colors: ['#2196f3'],
@@ -314,7 +314,7 @@ const TrafficAnalytics = () => {
 
             <Grid item xs={12} md={6}>
                 <Card sx={{ padding: 2, boxShadow: 2, height: '100%' }}>
-                    <Typography variant="h6" sx={{ mb: 2 }}>Κίνηση ανά Ώρα</Typography>
+                    <Typography variant="h6" sx={{ mb: 2 }}>Κίνηση ανά Ώρα Σήμερα</Typography>
                     {loading ? (
                         <CircularProgress sx={{ marginTop: 2 }} />
                     ) : (
@@ -330,7 +330,7 @@ const TrafficAnalytics = () => {
 
             <Grid item xs={12} md={6}>
                 <Card sx={{ padding: 2, boxShadow: 2, height: '100%' }}>
-                    <Typography variant="h6" sx={{ mb: 2 }}>Επισκόπηση Κίνησης</Typography>
+                    <Typography variant="h6" sx={{ mb: 2 }}>Επισκόπηση Κίνησης Εβδομάδας</Typography>
                     {loading ? (
                         <CircularProgress sx={{ marginTop: 2 }} />
                     ) : (

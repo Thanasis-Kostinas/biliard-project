@@ -11,14 +11,15 @@ import {
   Card,
   CardContent,
   CardActions,
+  Paper,
 } from "@mui/material";
 import { useGameContext } from "./GameContext";
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Import the icon
-
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SaveIcon from '@mui/icons-material/Save';
 
 const EditGame = () => {
-  const { id } = useParams<{ id: string }>(); // Get ID from the URL
-  const { gameInstances, addGame } = useGameContext(); // Use addGame for saving a new instance
+  const { id } = useParams<{ id: string }>();
+  const { gameInstances, addGame } = useGameContext();
   const navigate = useNavigate();
 
   const [gameData, setGameData] = useState({
@@ -29,9 +30,8 @@ const EditGame = () => {
 
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [message, setMessage] = useState("");
-  const [isFormLoaded, setIsFormLoaded] = useState(false); // Track if form is initially loaded
+  const [isFormLoaded, setIsFormLoaded] = useState(false);
 
-  // Fetch the game instance based on the ID and populate the form
   useEffect(() => {
     if (!isFormLoaded && id) {
       const gameInstance = gameInstances.find((inst) => inst.id === Number(id));
@@ -42,11 +42,10 @@ const EditGame = () => {
           price_per_hour: gameInstance.price_per_hour,
         });
       }
-      setIsFormLoaded(true); // Mark form as loaded after setting initial data
+      setIsFormLoaded(true);
     }
   }, [id, gameInstances, isFormLoaded]);
 
-  // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setGameData((prevData) => ({
@@ -55,20 +54,16 @@ const EditGame = () => {
     }));
   };
 
-  // Handle saving new game instance
   const handleSave = async () => {
     try {
-      await addGame(gameData.category_name, gameData.instance_name, gameData.price_per_hour); // Add new game instance
-      setMessage("New game instance created successfully!");
-      // setOpenSnackbar(true);
-
-      // Redirect to home page after saving
-      setTimeout(() => {
-        navigate(-1);
-      }, 2000);
+      await addGame(gameData.category_name, gameData.instance_name, gameData.price_per_hour);
+      setMessage("Οι αλλαγές αποθηκεύτηκαν επιτυχώς!");
+      setOpenSnackbar(true);
+      navigate("/options"); // Navigate directly to options page
     } catch (error) {
       if (error instanceof Error) {
-        alert("Failed to create game: " + error.message);
+        setMessage("Σφάλμα: " + error.message);
+        setOpenSnackbar(true);
       }
     }
   };
@@ -78,140 +73,158 @@ const EditGame = () => {
   };
 
   const handleBack = () => {
-    navigate(-1);
+    navigate("/options");
   };
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
-      <Card
-        variant="outlined"
+      <Paper
+        elevation={3}
         sx={{
           padding: 3,
-          boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
           borderRadius: "12px",
-          backgroundColor: "#f9f9f9", // Light background
+          background: "linear-gradient(145deg, #ffffff, #f5f5f5)",
         }}
       >
-        <CardContent>
-          <Typography
-            variant="h5"
-            gutterBottom
-            align="center"
+        <Typography
+          variant="h5"
+          gutterBottom
+          align="center"
+          sx={{
+            fontWeight: 600,
+            color: "#333",
+            marginBottom: 3,
+            textShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          Επεξεργασία Παιχνιδιού
+        </Typography>
+
+        <Box
+          display="flex"
+          flexDirection="column"
+          gap={2}
+          sx={{ mt: 2 }}
+        >
+          <TextField
+            label="Όνομα Κατηγορίας"
+            name="category_name"
+            value={gameData.category_name}
+            onChange={handleChange}
+            fullWidth
+            disabled
+            variant="outlined"
             sx={{
-              fontWeight: 600,
-              color: "#333",
+              "& .MuiInputBase-input.Mui-disabled": {
+                backgroundColor: "#f8f8f8",
+                color: "#666",
+              },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+              },
             }}
-          >
-            Επεξεργασία Παιχνιδιού
-          </Typography>
+          />
 
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            gap={2}
+          <TextField
+            label="Όνομα"
+            name="instance_name"
+            value={gameData.instance_name}
+            onChange={handleChange}
+            fullWidth
+            disabled
+            variant="outlined"
             sx={{
-              mt: 2,
+              "& .MuiInputBase-input.Mui-disabled": {
+                backgroundColor: "#f8f8f8",
+                color: "#666",
+              },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+              },
             }}
-          >
-            {/* Category Name */}
-            <TextField
-              label="Όνομα Κατηγορίας"
-              name="category_name"
-              value={gameData.category_name}
-              onChange={handleChange}
-              fullWidth
-              disabled
-              margin="normal"
-              variant="outlined"
-              sx={{
-                "& .MuiInputBase-input.Mui-disabled": {
-                  backgroundColor: "#f1f1f1", // Light grey for disabled fields
-                },
-              }}
-            />
+          />
 
-            {/* Instance Name */}
-            <TextField
-              label="Όνομα"
-              name="instance_name"
-              value={gameData.instance_name}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              disabled
-              sx={{
-                "& .MuiInputBase-input.Mui-disabled": {
-                  backgroundColor: "#f1f1f1",
+          <TextField
+            label="Κόστος ανά Ώρα (€)"
+            name="price_per_hour"
+            value={gameData.price_per_hour || ""}
+            onChange={handleChange}
+            type="number"
+            fullWidth
+            variant="outlined"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+                "&:hover": {
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#1976d2",
+                  },
                 },
-              }}
-            />
+              },
+            }}
+          />
+        </Box>
 
-            {/* Price per Hour */}
-            <TextField
-              label="Κόστος ανά Ώρα (€)"
-              name="price_per_hour"
-              value={gameData.price_per_hour || ""}
-              onChange={handleChange}
-              type="number"
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.1)",
-                },
-              }}
-            />
-          </Box>
-        </CardContent>
-
-        {/* Button Box for Save and Back */}
-        <CardActions sx={{ justifyContent: "space-between", mt: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 2,
+            mt: 3,
+          }}
+        >
           <Button
             variant="contained"
             color="primary"
             onClick={handleBack}
-            className="back-button"
-            sx={{
-              marginRight: 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px', // Space between icon and text
-              padding: '8px 16px',
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontWeight: 'bold',
-              boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.15)',
-            }}
             startIcon={<ArrowBackIcon />}
+            sx={{
+              borderRadius: "8px",
+              textTransform: "none",
+              fontWeight: "bold",
+              boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.15)",
+              "&:hover": {
+                backgroundColor: "#1565c0",
+              },
+            }}
           >
             ΠΙΣΩ
           </Button>
-        
+
           <Button
             variant="contained"
             color="primary"
             onClick={handleSave}
+            startIcon={<SaveIcon />}
             sx={{
-              flexGrow: 1,
-              marginRight: 1,
-              backgroundColor: "#1976d2", // Primary blue
+              borderRadius: "8px",
+              textTransform: "none",
+              fontWeight: "bold",
+              boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.15)",
               "&:hover": {
-                backgroundColor: "#125ea5", // Darker blue on hover
+                backgroundColor: "#1565c0",
               },
             }}
           >
             Αποθήκευση
           </Button>
-        </CardActions>
-      </Card>
+        </Box>
+      </Paper>
 
-
-      {/* Snackbar for success message */}
-      <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleSnackbarClose}>
-        <Alert onClose={handleSnackbarClose} severity="success">
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity="success"
+          sx={{
+            borderRadius: "8px",
+            boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+          }}
+        >
           {message}
         </Alert>
       </Snackbar>

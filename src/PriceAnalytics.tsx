@@ -687,7 +687,7 @@ const PriceAnalytics = () => {
                                                                 },
                                                             }}
                                                         >
-                                                            διαγραφη
+                                                            Διαγραφη
                                                         </Button>
                                                     </TableCell>
                                                 </TableRow>

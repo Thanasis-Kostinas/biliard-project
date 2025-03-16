@@ -51,35 +51,72 @@ const AnalyticsPage = () => {
     className="analytics-tabs"
     sx={{
         '& .MuiTab-root': {
-            fontWeight: '600', // Slightly bold font
-            color: '#555', // Neutral text color for unselected tabs
-            textTransform: 'uppercase', // Uniform text style
-            padding: '12px 20px', // Add padding for better spacing
-            borderRadius: '8px', // Smooth rounded corners
-            transition: 'all 0.3s ease',
-            margin: '0 8px', // Add horizontal margin between tabs
+            fontWeight: '600',
+            color: '#666',
+            textTransform: 'none', // Changed to none for better readability
+            padding: '16px 32px', // Increased padding for better touch targets
+            borderRadius: '12px',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            margin: '0 12px',
+            fontSize: '1.1rem',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0))',
+                opacity: 0,
+                transition: 'opacity 0.3s ease',
+            },
         },
         '& .MuiTab-root.Mui-selected': {
-            backgroundColor: '#f0f0f0', // Subtle background for selected tab
-            color: '#281c24', // Darker text color for contrast
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)', // Soft shadow for depth
-            transform: 'scale(1.1)', // Highlight selected tab with slight scaling
+            backgroundColor: '#281c24',
+            color: '#ffffff',
+            boxShadow: '0 4px 12px rgba(40, 28, 36, 0.2)',
+            transform: 'translateY(-2px)',
+            '&::before': {
+                opacity: 1,
+            },
         },
         '& .MuiTab-root:hover': {
-            backgroundColor: '#e0e0e0', // Light hover effect
-            color: '#333', // Slightly darker text color
-            transform: 'scale(1.05)', // Add a hover scale effect
-            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)', // Enhanced hover shadow
+            backgroundColor: '#f8f8f8',
+            color: '#281c24',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
         },
         '& .MuiTabs-indicator': {
-            height: '4px', // Thicker indicator bar
-            backgroundColor: '#281c24', // Accent color for indicator
-            borderRadius: '2px', // Rounded indicator edges
+            display: 'none', // Removed the indicator for a cleaner look
         },
     }}
 >
-    <Tab label="Κέρδη" disableRipple />
-    <Tab label="Κίνηση" disableRipple />
+    <Tab 
+        label="Κέρδη" 
+        disableRipple 
+        sx={{
+            '&.Mui-selected': {
+                '&:hover': {
+                    backgroundColor: '#281c24',
+                    color: '#ffffff',
+                }
+            }
+        }}
+    />
+    <Tab 
+        label="Κίνηση" 
+        disableRipple 
+        sx={{
+            '&.Mui-selected': {
+                '&:hover': {
+                    backgroundColor: '#281c24',
+                    color: '#ffffff',
+                }
+            }
+        }}
+    />
 </Tabs>
 
     <div className="analytics-content" style={{ marginTop: '16px' }}>
