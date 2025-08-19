@@ -387,6 +387,17 @@ const Home = () => {
       return;
     }
 
+    if (instance.elapsed_time === null || instance.elapsed_time <= 3600) {
+      instance.total_cost = instance.price_per_hour
+    } else {
+      const minutes = Math.ceil(instance.elapsed_time / 60);
+      const pricePerMinute = instance.price_per_hour / 60;
+    let cost = minutes * pricePerMinute;
+
+  // Round cost to nearest .00 or .50
+  instance.total_cost = Math.round(cost * 2) / 2;
+}
+
     try {
       await finishGame(selectedInstanceId);
       showSnackbar("Αποθηκεύτηκε");
